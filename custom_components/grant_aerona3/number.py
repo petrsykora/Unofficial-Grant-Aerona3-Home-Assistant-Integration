@@ -74,41 +74,11 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         self._attr_native_unit_of_measurement = self._register_config["unit"]
         self._attr_mode = NumberMode.BOX  # Use box mode for precise control
 
-        # Set min/max values based on register type and unit
-        if self._register_config["unit"] == UnitOfTemperature.CELSIUS:
-            # Temperature ranges
-            if "dhw" in self._register_config["name"].lower():
-                self._attr_native_min_value = 10.0
-                self._attr_native_max_value = 70.0
-                self._attr_native_step = 0.5
-            elif "outdoor" in self._register_config["name"].lower():
-                self._attr_native_min_value = -30.0
-                self._attr_native_max_value = 50.0
-                self._attr_native_step = 0.5
-            else:
-                self._attr_native_min_value = 0.0
-                self._attr_native_max_value = 80.0
-                self._attr_native_step = 0.5
-        elif self._register_config["unit"] is None:
-            # Non-unit values (modes, settings, etc.)
-            name_lower = self._register_config["name"].lower()
-            if "mode" in name_lower or "type" in name_lower or "function" in name_lower:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 10  # Most modes are 0-3, give some room
-                self._attr_native_step = 1
-            elif "time" in name_lower or "delay" in name_lower:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 300  # Up to 5 minutes for timing settings
-                self._attr_native_step = 1
-            else:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 100
-                self._attr_native_step = 1
-        else:
-            # Other units - set reasonable defaults
-            self._attr_native_min_value = 0
-            self._attr_native_max_value = 100
-            self._attr_native_step = 1
+        # Use min/max/step from the register config, fallback to safe defaults
+        self._attr_native_min_value = self._register_config.get("min", 0)
+        self._attr_native_max_value = self._register_config.get("max", 100)
+        self._attr_native_step = self._register_config.get("step", 1)
+
 
         # Set icon based on function
         name_lower = self._register_config["name"].lower()
