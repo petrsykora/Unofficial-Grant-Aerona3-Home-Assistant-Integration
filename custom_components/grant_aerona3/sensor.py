@@ -223,13 +223,6 @@ class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
         return self._register_config.get("state_class")
 
     @property
-    def entity_category(self) -> Optional[EntityCategory]:
-        """Return the entity category for configuration parameters."""
-        if self._register_config.get("writable", False):
-            return EntityCategory.CONFIG
-        return None
-
-    @property
     def icon(self) -> str:
         """Return the icon for the sensor."""
         if self._register_config.get("writable", False):
