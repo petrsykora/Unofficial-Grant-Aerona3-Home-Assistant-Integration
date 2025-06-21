@@ -8,13 +8,6 @@ import voluptuous as vol
 from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ModbusException
 
-_LOGGER = logging.getLogger(__name__)
-
-import pymodbus
-import inspect
-_LOGGER.error("PYMODBUS VERSION IN USE: %s", pymodbus.__version__)
-_LOGGER.error("PYMODBUS read_input_registers signature: %s", inspect.signature(ModbusTcpClient.read_input_registers))
-
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
@@ -30,6 +23,8 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 INTEGRATION_VERSION = "1.1.0"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
@@ -41,9 +36,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-    
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect.
 
@@ -62,8 +55,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         
         # Try to read a register to verify communication
         result = await hass.async_add_executor_job(
-            lambda: client.read_input_registers(0, count=1, slave=slave_id)
+           lambda: client.read_input_registers(0, count=1, slave=slave_id)
         )
+
         
         if result.isError():
             raise CannotConnect("Failed to read from heat pump - check Slave ID")
@@ -125,3 +119,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "features": "All entities will have 'ashp_' prefixes for better organisation"
             }
         )
+
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect."""
