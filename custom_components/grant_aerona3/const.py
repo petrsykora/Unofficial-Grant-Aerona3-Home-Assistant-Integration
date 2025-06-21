@@ -82,7 +82,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 # Default values
 DEFAULT_PORT = 502
 DEFAULT_SLAVE_ID = 1
-DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_SCAN_INTERVAL = 10
 
 # Register types
 INPUT_REGISTERS = "input"
@@ -264,6 +264,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Heating Zone1, Fixed Outgoing water set point in Heating"
     },
     3: {
@@ -273,6 +276,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Max. Outgoing water temperature in Heating mode (Tm1) Zone1"
     },
     4: {
@@ -282,6 +288,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone1"
     },
     5: {
@@ -291,6 +300,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone1"
     },
     6: {
@@ -300,6 +312,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 40.0,
+        "step": 0.5,
         "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone1"
     },
     7: {
@@ -309,6 +324,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Heating Zone2, Fixed Outgoing water set point in Heating"
     },
     8: {
@@ -318,6 +336,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Max. Outgoing water temperature in Heating mode (Tm1) Zone2"
     },
     9: {
@@ -327,6 +348,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone2"
     },
     10: {
@@ -336,6 +360,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
     },
     11: {
@@ -345,6 +372,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 40.0,
+        "step": 0.5,
         "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone2"
     },
     12: {
@@ -354,6 +384,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Cooling Zone1, Fixed Outgoing water set point in Cooling"
     },
     13: {
@@ -363,6 +396,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Max. Outgoing water temperature in Cooling mode (Tm1) Zone1"
     },
     14: {
@@ -372,6 +408,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Min. Outgoing water temperature in Cooling mode (Tm2) Zone1"
     },
     15: {
@@ -381,6 +420,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to min. Outgoing water temperature Cooling (Te1) Zone1"
     },
     16: {
@@ -390,6 +432,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature Cooling (Te2) Zone1"
     },
     17: {
@@ -399,6 +444,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Cooling Zone2, Fixed Outgoing water set point in Cooling"
     },
     18: {
@@ -408,6 +456,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Max. Outgoing water temperature in Cooling mode (Tm1) Zone2"
     },
     19: {
@@ -417,6 +468,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Min. Outgoing water temperature in Cooling mode (Tm2) Zone2"
     },
     20: {
@@ -426,6 +480,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
     },
     21: {
@@ -435,6 +492,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone2"
     },
     22: {
@@ -444,6 +504,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Hysteresis of water set point in Heating and DHW"
     },
     23: {
@@ -453,6 +516,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Hysteresis of water set point in Cooling"
     },
     24: {
@@ -462,6 +528,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Low tariff deferential water set point for Heating"
     },
     25: {
@@ -471,6 +540,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Low tariff deferential water set point for Cooling"
     },
     26: {
@@ -480,6 +552,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "DHW production priority setting (0=DHW is unavailable, 1=DHW is available and priority DHW over space Heating, 2=DHW is available and priority space Heating over DHW)"
     },
     27: {
@@ -489,6 +563,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "Type of configuration to heat the DHW (0=Heat pump + Heater, 1=Heat pump only, 2=Heater only)"
     },
     28: {
@@ -498,6 +574,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 40.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "DHW Comfort set temperature"
     },
     29: {
@@ -507,6 +586,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 30.0,
+        "max": 50.0,
+        "step": 0.5,
         "description": "DHW Economy set temperature"
     },
     30: {
@@ -516,6 +598,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "DHW set point hysteresis"
     },
     31: {
@@ -525,6 +610,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 50.0,
+        "max": 90.0,
+        "step": 0.5,
         "description": "DHW Over boost mode set point"
     },
     32: {
@@ -534,6 +622,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "Max. time for DHW request"
     },
     33: {
@@ -543,6 +634,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "step": 1.0,
         "description": "Delay time on DHW heater from OFF compressor"
     },
     34: {
@@ -552,6 +644,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Outdoor air temperature to enable DHW heaters"
     },
     35: {
@@ -561,6 +656,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Outdoor air temperature hysteresis to disable DHW heaters"
     },
     36: {
@@ -570,6 +668,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "step": 0.5,
         "description": "Anti-legionella set point"
     },
     37: {
@@ -579,6 +678,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 50.0,
+        "max": 100.0,
+        "step": 5.0,
         "description": "Max. frequency of Night mode"
     },
     38: {
@@ -588,6 +690,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 0.0,
+        "step": 1.0,
         "description": "Min. time compressor ON/OFF time"
     },
     39: {
@@ -597,6 +702,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "Delay time pump OFF from compressor OFF"
     },
     40: {
@@ -606,6 +714,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "Delay time compressor ON from pump ON"
     },
     41: {
@@ -615,6 +726,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "Type of configuration of Main water pump (0=always ON, 1=ON/OFF based on Buffertank temperature, 2=ON/OFF based on Sniffing cycles"
     },
     42: {
@@ -624,6 +737,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 1.0,
+        "max": 15.0,
+        "step": 1.0,
         "description": "Time ON Main water pump for Sniffing cycle"
     },
     43: {
@@ -633,6 +749,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 5.0,
+        "max": 30.0,
+        "step": 1.0,
         "description": "Time OFF Main water pump"
     },
     44: {
@@ -642,6 +761,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 1.0,
+        "max": 15.0,
+        "step": 1.0,
         "description": "Delay time OFF Main water pump from OFF compressor"
     },
     45: {
@@ -651,6 +773,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 240.0,
+        "step": 1.0,
         "description": "OFF time for Unlock pump function start"
     },
     46: {
@@ -660,6 +785,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 10.0,
+        "step": 1.0,
         "description": "Time ON Main water pump for Unlock pump function"
     },
     47: {
@@ -669,6 +797,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 10.0,
+        "step": 1.0,
         "description": "Time ON water pump1 for Unlock pump function"
     },
     48: {
@@ -678,6 +809,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 10.0,
+        "step": 1.0,
         "description": "Time ON water pump2 for Unlock pump function"
     },
     49: {
@@ -687,6 +821,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 4.0,
         "description": "Type of operation of additional water pump (0=disable, 1=depending on Main water pump setting, 2=depending on Main water pump setting but always OFF when the DHW mode is activated, 3=always ON apart if any alarms are activated or if the HP unit is in OFF mode, 4=ON/OFF based on Room air temperature)"
     },
     50: {
@@ -696,6 +832,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 40.0,
+        "step": 0.5,
         "description": "Start temperature of Frost protection on Room air temperature"
     },
     51: {
@@ -705,6 +844,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 5.0,
+        "step": 0.5,
         "description": "Hysteresis of Room air temperature of Frost protection"
     },
     52: {
@@ -714,6 +856,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 10.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Water temperature of Frost protection"
     },
     53: {
@@ -723,6 +868,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 120.0,
+        "step": 1.0,
         "description": "Delay time OFF Main water pump from OFF Frost protection operation function"
     },
     54: {
@@ -732,6 +880,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Start temperature of Frost protection on Outdoor air temperature"
     },
     55: {
@@ -741,6 +892,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 5.0,
+        "step": 0.5,
         "description": "Hysteresis of Outdoor air temperature"
     },
     56: {
@@ -750,6 +904,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Backup heater set point during Frost protection"
     },
     57: {
@@ -759,6 +916,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 5.0,
+        "step": 0.5,
         "description": "Hysteresis of Outgoing water temperature"
     },
     58: {
@@ -768,6 +928,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Start temperature of Frost protection on DHW tank temperature"
     },
     59: {
@@ -777,6 +940,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 5.0,
+        "step": 0.5,
         "description": "Hysteresis of DHW tank temperature"
     },
     60: {
@@ -786,6 +952,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 100.0,
+        "step": 1.0,
         "description": "Room relative humidity value"
     },
     61: {
@@ -795,6 +964,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 100.0,
+        "step": 1.0,
         "description": "Room relative humidity value to start increasing Outgoing water temperature set"
     },
     62: {
@@ -804,6 +976,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Max. Outgoing temperature hysteresis corresponding to 100% relative humidity"
     },
     63: {
@@ -813,6 +988,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 10.0,
         "description": "Mixing valve runtime (from the fully closed to the fully open position)"
     },
     64: {
@@ -840,6 +1018,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 1.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "3way valve change over time"
     },
     67: {
@@ -885,6 +1066,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 3.0,
         "description": "Backup heater type of function (0=disable, 1=Replacement mode, 2=Emergency mode, 3=Supplementary mode)"
     },
     72: {
@@ -894,6 +1077,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 40.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Manual water set point"
     },
     73: {
@@ -903,6 +1089,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Manual water temperature hysteresis"
     },
     74: {
@@ -912,6 +1101,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "step": 1.0,
         "description": "Delay time of the heater OFF that avoid flow switch alarm"
     },
     75: {
@@ -921,6 +1111,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "Heater activation delay time"
     },
     76: {
@@ -930,6 +1123,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 0.0,
         "description": "Integration time for starting heaters"
     },
     77: {
@@ -939,6 +1135,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Outdoor air temperature to enable Backup heaters and disable compressor"
     },
     78: {
@@ -948,6 +1147,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Outdoor air temperature hysteresis to disable Backup heaters and enable compressor"
     },
     79: {
@@ -957,6 +1159,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Outdoor air temperature to enable Backup heaters (Supplementary mode)"
     },
     80: {
@@ -966,6 +1171,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Outdoor air temperature hysteresis to disable Backup heaters (Supplementary mode)"
     },
     81: {
@@ -975,6 +1183,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 3.0,
         "description": "Freeze protection functions (0=disable, 1=enabled during Start-up, 2=enabled during Defrost, 3=enabled during Start-up and Defrost)"
     },
     82: {
@@ -984,6 +1194,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Outgoing water temperature set point during Start-up"
     },
     83: {
@@ -993,6 +1206,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Hysteresis water temperature set point during Start-up"
     },
     84: {
@@ -1002,6 +1218,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "EHS type of function (0=disable, 1=Replacement mode, 2=Supplementary mode)"
     },
     85: {
@@ -1011,6 +1229,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Outdoor air temperature to enable EHS and disable compressor"
     },
     86: {
@@ -1020,6 +1241,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Outdoor air temperature hysteresis to disable EHS and enable compressor"
     },
     87: {
@@ -1029,6 +1253,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": -20.0,
+        "max": 20.0,
+        "step": 0.5,
         "description": "Outdoor air temperature to enable EHS (Supplementary mode)"
     },
     88: {
@@ -1038,6 +1265,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 0.5,
+        "max": 10.0,
+        "step": 0.5,
         "description": "Outdoor air temperature hysteresis to disable EHS (Supplementary mode)"
     },
     89: {
@@ -1047,6 +1277,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 1.0,
         "description": "EHS activation delay time"
     },
     90: {
@@ -1056,6 +1289,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 900.0,
+        "step": 0.0,
         "description": "Integration time for starting EHS"
     },
     91: {
@@ -1065,6 +1301,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "Terminal 20-21 : ON/OFF remote contact or EHS Alarm input (0=disable (Remote controller only), 1=ON/OFF remote contact, 2=EHS Alarm input)"
     },
     92: {
@@ -1074,6 +1312,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "Terminal 24-25 : Heating/Cooling mode remote contact (0=disable (Remote controller only), 1=Cooling is CLOSE contact Heating is OPEN contact, 2=Cooling is OPEN contact Heating is CLOSE contact)"
     },
     93: {
@@ -1083,6 +1323,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 2.0,
         "description": "Terminal 47 : Alarm (Configurable output) (0=disable, 1=Alarm, 2=Ambient temperature reached)"
     },
     94: {
@@ -1092,6 +1334,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 1.0,
         "description": "Terminal 48 : Pump1 (0=disable, 1=1st Additional water pump1 for Zone1)"
     },
     95: {
@@ -1101,6 +1345,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 0.0,
+        "max": 1.0,
         "description": "Terminal 49 : Pump2 (0=disable, 1=2nd Additional water pump2 for Zone2)"
     },
     96: {
@@ -1110,6 +1356,8 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "min": 1.0,
+        "max": 1.0,
         "description": "Terminal 50-51-52 : DHW 3way valve (1=enable)"
     },
     99: {
@@ -1119,6 +1367,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 23.0,
+        "max": 60.0,
+        "step": 0.5,
         "description": "Buffer tank set point for Heating"
     },
     100: {
@@ -1128,6 +1379,9 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
+        "min": 7.0,
+        "max": 23.0,
+        "step": 0.5,
         "description": "Buffer tank set point for Cooling"
     },
 }
