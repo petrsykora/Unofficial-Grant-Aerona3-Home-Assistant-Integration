@@ -43,7 +43,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect."""
-
+    
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect.
 
@@ -87,6 +87,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         "slave_id": slave_id,
         "scan_interval": data[CONF_SCAN_INTERVAL],
     }
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Grant Aerona3 Heat Pump."""
