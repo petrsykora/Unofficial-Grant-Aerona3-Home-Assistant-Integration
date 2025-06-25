@@ -1,4 +1,4 @@
-# Grant Aerona3 Heat Pump Integration for Home Assistant
+# Unofficial Grant Aerona3 Heat Pump Integration for Home Assistant - BETA - this is still very much in development
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-blue.svg)](https://www.home-assistant.io/)
 [![Grant Aerona3](https://img.shields.io/badge/Grant%20Aerona3-Supported-green.svg)](https://www.grantuk.com/)
