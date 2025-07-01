@@ -121,7 +121,7 @@ INPUT_REGISTER_MAP = {
     3: {
         "name": "Current Consumption Value",
         "unit": UnitOfPower.WATT,
-        "device_class": SensorDeviceClass.CURRENT,
+        "device_class": SensorDeviceClass.POWER,
         "state_class": SensorStateClass.MEASUREMENT,
         "scale": 100,
         "offset": 0,
