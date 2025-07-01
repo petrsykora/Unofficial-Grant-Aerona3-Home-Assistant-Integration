@@ -145,7 +145,11 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 if not result.isError():
                     for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
                         if reg_id in HOLDING_REGISTER_MAP and j < len(result.registers):
-                            holding_data[reg_id] = result.registers[j]
+                            raw_value = result.registers[j]
+                            # Handle signed 16-bit values
+                            if raw_value > 32767:
+                                raw_value = raw_value - 65536
+                            holding_data[reg_id] = raw_value
                 else:
                     _LOGGER.warning("Error reading holding registers %d-%d: %s", start_reg, end_reg, result)
             except Exception as err:
