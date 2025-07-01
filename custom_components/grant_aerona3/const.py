@@ -364,7 +364,6 @@ HOLDING_REGISTER_MAP = {
         "max": 50.0,
         "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
-        "signed": True,
     },
     11: {
         "name": "Max. Outdoor Air Temperature Zone2",
@@ -1005,9 +1004,9 @@ HOLDING_REGISTER_MAP = {
     },
     65: {
         "name": "Max Water Temperature In Mixing Circuit",
-        "unit": None,
+        "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 1,
+        "scale": 0.1,
         "offset": 0,
         "writable": True,
         "description": "Max Water temperature in mixing circuit"
