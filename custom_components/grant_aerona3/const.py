@@ -364,6 +364,7 @@ HOLDING_REGISTER_MAP = {
         "max": 50.0,
         "step": 0.5,
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
+        "signed": True,
     },
     11: {
         "name": "Max. Outdoor Air Temperature Zone2",
