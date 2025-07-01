@@ -101,29 +101,23 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
     @property
     def native_value(self) -> Optional[float]:
         """Return the current value."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
+        holding_registers = self.coordinator.data.get("holding_registers", {})
+        raw_value = holding_registers.get(self._register_id)
+        if raw_value is None:
             return None
-
-        register_data = self.coordinator.data[register_key]
-        
-        # Check if register is available
-        if not register_data.get("available", True):
-            return None
-            
-        return register_data["value"]
+        scale = self._register_config.get("scale", 1)
+        return raw_value * scale
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
-        # Convert value back to raw register value using the scale factor from const.py
-        raw_value = int(value / self._register_config["scale"])
-
+        scale = self._register_config.get("scale", 1)
+        raw_value = int(value / scale)
         success = await self.coordinator.async_write_holding_register(self._register_id, raw_value)
         if success:
-            # Request immediate refresh to update state
             await self.coordinator.async_request_refresh()
         else:
             _LOGGER.error("Failed to set value %s for %s", value, self._attr_name)
+
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
