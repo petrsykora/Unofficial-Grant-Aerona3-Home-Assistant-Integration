@@ -512,7 +512,7 @@ HOLDING_REGISTER_MAP = {
     23: {
         "name": "Hysteresis Of Water Set Point In Cooling",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -524,7 +524,7 @@ HOLDING_REGISTER_MAP = {
     24: {
         "name": "Low Tariff Deferential Water Set Point For Heating",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -536,7 +536,7 @@ HOLDING_REGISTER_MAP = {
     25: {
         "name": "Low Tariff Deferential Water Set Point For Cooling",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -594,7 +594,7 @@ HOLDING_REGISTER_MAP = {
     30: {
         "name": "DHW Set Point Hysteresis",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -606,7 +606,7 @@ HOLDING_REGISTER_MAP = {
     31: {
         "name": "DHW Over Boost Mode Set Point",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -617,7 +617,7 @@ HOLDING_REGISTER_MAP = {
     },
     32: {
         "name": "Max. Time For DHW Request",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -629,7 +629,7 @@ HOLDING_REGISTER_MAP = {
     },
     33: {
         "name": "Delay Time On DHW Heater From Off Compressor",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -664,7 +664,7 @@ HOLDING_REGISTER_MAP = {
     36: {
         "name": "Anti-legionella Set Point",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -673,7 +673,7 @@ HOLDING_REGISTER_MAP = {
     },
     37: {
         "name": "Max. Frequency Of Night Mode",
-        "unit": None,
+        "unit": UnitOfFrequency.HERTZ,
         "device_class": SensorDeviceClass.FREQUENCY,
         "scale": 1,
         "offset": 0,
@@ -685,7 +685,7 @@ HOLDING_REGISTER_MAP = {
     },
     38: {
         "name": "Min. Time Compressor On/off Time",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -697,7 +697,7 @@ HOLDING_REGISTER_MAP = {
     },
     39: {
         "name": "Delay Time Pump Off From Compressor Off",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -709,7 +709,7 @@ HOLDING_REGISTER_MAP = {
     },
     40: {
         "name": "Delay Time Compressor On From Pump On",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -732,7 +732,7 @@ HOLDING_REGISTER_MAP = {
     },
     42: {
         "name": "Time On Main Water Pump For Sniffing Cycle",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -744,7 +744,7 @@ HOLDING_REGISTER_MAP = {
     },
     43: {
         "name": "Time Off Main Water Pump",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -756,7 +756,7 @@ HOLDING_REGISTER_MAP = {
     },
     44: {
         "name": "Delay Time Off Main Water Pump From Off Compressor",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -768,7 +768,7 @@ HOLDING_REGISTER_MAP = {
     },
     45: {
         "name": "Off Time For Unlock Pump Function Start",
-        "unit": None,
+        "unit": "h",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -780,7 +780,7 @@ HOLDING_REGISTER_MAP = {
     },
     46: {
         "name": "Time On Main Water Pump For Unlock Pump Function",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -792,7 +792,7 @@ HOLDING_REGISTER_MAP = {
     },
     47: {
         "name": "Time On Water Pump1 For Unlock Pump Function",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -804,7 +804,7 @@ HOLDING_REGISTER_MAP = {
     },
     48: {
         "name": "Time On Water Pump2 For Unlock Pump Function",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -863,7 +863,7 @@ HOLDING_REGISTER_MAP = {
     },
     53: {
         "name": "Delay Time Off Main Water Pump From Off",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -900,7 +900,7 @@ HOLDING_REGISTER_MAP = {
     56: {
         "name": "Backup Heater Set Point During Frost Protection",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -947,8 +947,8 @@ HOLDING_REGISTER_MAP = {
     },
     60: {
         "name": "Room Relative Humidity Value",
-        "unit": None,
-        "device_class": None,
+        "unit": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
         "writable": True,
@@ -959,8 +959,8 @@ HOLDING_REGISTER_MAP = {
     },
     61: {
         "name": "Room Relative Humidity Value To Start Increasing Flow Temp",
-        "unit": None,
-        "device_class": None,
+        "unit": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
         "writable": True,
@@ -983,7 +983,7 @@ HOLDING_REGISTER_MAP = {
     },
     63: {
         "name": "Mixing Valve Runtime",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1013,7 +1013,7 @@ HOLDING_REGISTER_MAP = {
     },
     66: {
         "name": "3way Valve Change Over Time",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1025,7 +1025,7 @@ HOLDING_REGISTER_MAP = {
     },
     67: {
         "name": "Flow Switch Alarm Delay Time At. Pump Start Up",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1034,7 +1034,7 @@ HOLDING_REGISTER_MAP = {
     },
     68: {
         "name": "Flow Switch Alarm Delay Time",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1052,7 +1052,7 @@ HOLDING_REGISTER_MAP = {
     },
     70: {
         "name": "The Time Of Repeating Retry Until Displaying Alarm",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1073,7 +1073,7 @@ HOLDING_REGISTER_MAP = {
     72: {
         "name": "Manual Water Set Point",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -1096,7 +1096,7 @@ HOLDING_REGISTER_MAP = {
     },
     74: {
         "name": "Delay Time Of The Heater Off That Avoid Flow Switch Alarm",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1106,7 +1106,7 @@ HOLDING_REGISTER_MAP = {
     },
     75: {
         "name": "Heater Activation Delay Time",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1118,14 +1118,14 @@ HOLDING_REGISTER_MAP = {
     },
     76: {
         "name": "Integration Time For Starting Heaters",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
         "writable": True,
         "min": 0.0,
         "max": 900.0,
-        "step": 0.0,
+        "step": 1.0,
         "description": "Integration time for starting heaters"
     },
     77: {
@@ -1272,7 +1272,7 @@ HOLDING_REGISTER_MAP = {
     },
     89: {
         "name": "EHS Activation Delay Time",
-        "unit": None,
+        "unit": "min",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1284,14 +1284,14 @@ HOLDING_REGISTER_MAP = {
     },
     90: {
         "name": "Integration Time For Starting EHS",
-        "unit": None,
+        "unit": "s",
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
         "writable": True,
         "min": 0.0,
         "max": 900.0,
-        "step": 0.0,
+        "step": 1.0,
         "description": "Integration time for starting EHS"
     },
     91: {
@@ -1363,7 +1363,7 @@ HOLDING_REGISTER_MAP = {
     99: {
         "name": "Buffer Tank Set Point For Heating",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -1375,7 +1375,7 @@ HOLDING_REGISTER_MAP = {
     100: {
         "name": "Buffer Tank Set Point For Cooling",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
