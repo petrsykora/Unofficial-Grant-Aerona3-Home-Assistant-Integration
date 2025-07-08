@@ -44,7 +44,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         flow_rate_lpm = (
             entry.options.get("flow_rate_lpm")
             if hasattr(entry, "options") and entry.options.get("flow_rate_lpm") is not None
-            else entry.data.get("flow_rate_lpm", 10)
+            else entry.data.get("flow_rate_lpm", 30.0)
         )
         self.flow_rate_lpm = flow_rate_lpm
 
@@ -62,7 +62,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
-            return await asyncio.wait_for(self._fetch_data(), timeout=30.0)
+            return await asyncio.wait_for(self._fetch_data(), timeout=180.0)
         except asyncio.TimeoutError as err:
             raise UpdateFailed(f"Timeout connecting to ASHP at {self.host}") from err
         except Exception as err:
@@ -75,16 +75,34 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             "coil_registers": {},
             "last_update": asyncio.get_running_loop().time(),
         }
+        
+        # Create a fresh client for each fetch to avoid connection issues
+        client = ModbusTcpClient(
+            host=self.host,
+            port=self.port,
+            timeout=5,  # Reduced timeout
+        )
+        
         try:
-            connected = await self.hass.async_add_executor_job(self._client.connect)
+            # Connect with timeout
+            connected = await asyncio.wait_for(
+                self.hass.async_add_executor_job(client.connect), 
+                timeout=30.0
+            )
             if not connected:
                 raise UpdateFailed(f"Failed to connect to ASHP at {self.host}:{self.port}")
-            data["input_registers"] = await self._read_input_registers()
-            data["holding_registers"] = await self._read_holding_registers()
-            data["coil_registers"] = await self._read_coil_registers()
+            
+            # Read data with individual timeouts
+            data["input_registers"] = await self._read_input_registers(client)
+            data["holding_registers"] = await self._read_holding_registers(client)
+            data["coil_registers"] = await self._read_coil_registers(client)
             data["calculated"] = self._calculate_derived_values(
                 data["input_registers"], data["holding_registers"]
             )
+            
+        except asyncio.TimeoutError as err:
+            _LOGGER.error("Timeout during Modbus operation: %s", err)
+            raise UpdateFailed(f"Timeout during Modbus operation: {err}") from err
         except ModbusException as err:
             _LOGGER.error("Modbus error: %s", err)
             raise UpdateFailed(f"Modbus communication error: {err}") from err
@@ -93,92 +111,120 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             raise UpdateFailed(f"Unexpected error: {err}") from err
         finally:
             try:
-                await self.hass.async_add_executor_job(self._client.close)
+                await self.hass.async_add_executor_job(client.close)
             except Exception:
                 pass
         return data
 
-    async def _read_input_registers(self) -> Dict[int, float]:
+    async def _read_input_registers(self, client: ModbusTcpClient) -> Dict[int, float]:
         input_data = {}
-        chunk_size = 20
-        register_ids = list(INPUT_REGISTER_MAP.keys())
-        for i in range(0, len(register_ids), chunk_size):
-            chunk = register_ids[i:i + chunk_size]
-            if not chunk:
-                continue
-            start_reg = min(chunk)
-            end_reg = max(chunk)
-            count = end_reg - start_reg + 1
-            try:
-                result = await self.hass.async_add_executor_job(
-                    lambda start_reg=start_reg, count=count: self._client.read_input_registers(start_reg, count=count, slave=self.slave_id)
-                )
-                if not result.isError():
-                    for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
-                        if reg_id in INPUT_REGISTER_MAP and j < len(result.registers):
-                             raw_value = result.registers[j]
-                             # Handle signed 16-bit values
-                             if raw_value > 32767:
-                                raw_value = raw_value - 65536
-                             input_data[reg_id] = raw_value
-                else:
-                    _LOGGER.warning("Error reading input registers %d-%d: %s", start_reg, end_reg, result)
-            except Exception as err:
-                _LOGGER.warning("Failed to read input registers %d-%d: %s", start_reg, end_reg, err)
+        
+        # Read only the most critical registers first to test connectivity
+        critical_registers = [0, 1, 3, 6, 9]  # Return temp, frequency, power, outdoor temp, flow temp
+        
+        for reg_id in critical_registers:
+            if reg_id in INPUT_REGISTER_MAP:
+                try:
+                    result = await asyncio.wait_for(
+                        self.hass.async_add_executor_job(
+                            lambda reg=reg_id: client.read_input_registers(reg, count=1, slave=self.slave_id)
+                        ),
+                        timeout=3.0
+                    )
+                    if not result.isError():
+                        raw_value = result.registers[0]
+                        # Handle signed 16-bit values
+                        if raw_value > 32767:
+                            raw_value = raw_value - 65536
+                        input_data[reg_id] = raw_value
+                    else:
+                        _LOGGER.debug("Error reading input register %d: %s", reg_id, result)
+                except Exception as err:
+                    _LOGGER.debug("Failed to read input register %d: %s", reg_id, err)
+        
+        # If critical registers work, try reading the rest
+        if input_data:
+            remaining_registers = [reg for reg in INPUT_REGISTER_MAP.keys() if reg not in critical_registers]
+            for reg_id in remaining_registers:
+                try:
+                    result = await asyncio.wait_for(
+                        self.hass.async_add_executor_job(
+                            lambda reg=reg_id: client.read_input_registers(reg, count=1, slave=self.slave_id)
+                        ),
+                        timeout=2.0
+                    )
+                    if not result.isError():
+                        raw_value = result.registers[0]
+                        if raw_value > 32767:
+                            raw_value = raw_value - 65536
+                        input_data[reg_id] = raw_value
+                except Exception as err:
+                    _LOGGER.debug("Failed to read input register %d: %s", reg_id, err)
+                    continue  # Continue with other registers
+        
         return input_data
 
-    async def _read_holding_registers(self) -> Dict[int, float]:
+    async def _read_holding_registers(self, client: ModbusTcpClient) -> Dict[int, float]:
         holding_data = {}
-        chunk_size = 20
-        register_ids = list(HOLDING_REGISTER_MAP.keys())
-        for i in range(0, len(register_ids), chunk_size):
-            chunk = register_ids[i:i + chunk_size]
-            if not chunk:
-                continue
-            start_reg = min(chunk)
-            end_reg = max(chunk)
-            count = end_reg - start_reg + 1
-            try:
-                result = await self.hass.async_add_executor_job(
-                    lambda start_reg=start_reg, count=count: self._client.read_holding_registers(start_reg, count=count, slave=self.slave_id)
-                )
-                if not result.isError():
-                    for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
-                        if reg_id in HOLDING_REGISTER_MAP and j < len(result.registers):
-                            raw_value = result.registers[j]
-                            # Handle signed 16-bit values
-                            if raw_value > 32767:
-                                raw_value = raw_value - 65536
-                            holding_data[reg_id] = raw_value
-                else:
-                    _LOGGER.warning("Error reading holding registers %d-%d: %s", start_reg, end_reg, result)
-            except Exception as err:
-                _LOGGER.warning("Failed to read holding registers %d-%d: %s", start_reg, end_reg, err)
+        
+        # Get all writable registers from the map - these are the ones we need for number entities
+        writable_registers = [reg_id for reg_id, config in HOLDING_REGISTER_MAP.items() if config.get("writable", False)]
+        
+        _LOGGER.debug("Reading %d writable holding registers: %s", len(writable_registers), writable_registers)
+        
+        # Read registers in smaller batches to avoid overwhelming the device
+        batch_size = 5
+        for i in range(0, len(writable_registers), batch_size):
+            batch = writable_registers[i:i + batch_size]
+            
+            for reg_id in batch:
+                try:
+                    result = await asyncio.wait_for(
+                        self.hass.async_add_executor_job(
+                            lambda reg=reg_id: client.read_holding_registers(reg, count=1, slave=self.slave_id)
+                        ),
+                        timeout=2.0
+                    )
+                    if not result.isError():
+                        raw_value = result.registers[0]
+                        if raw_value > 32767:
+                            raw_value = raw_value - 65536
+                        holding_data[reg_id] = raw_value
+                        _LOGGER.debug("Successfully read register %d: %d", reg_id, raw_value)
+                    else:
+                        _LOGGER.debug("Error reading holding register %d: %s", reg_id, result)
+                except Exception as err:
+                    _LOGGER.debug("Failed to read holding register %d: %s", reg_id, err)
+            
+            # Small delay between batches to avoid overwhelming the device
+            if i + batch_size < len(writable_registers):
+                await asyncio.sleep(0.1)
+        
+        _LOGGER.info("Successfully read %d/%d holding registers", len(holding_data), len(writable_registers))
         return holding_data
 
-    async def _read_coil_registers(self) -> Dict[int, bool]:
+    async def _read_coil_registers(self, client: ModbusTcpClient) -> Dict[int, bool]:
         coil_data = {}
-        chunk_size = 20
-        register_ids = list(COIL_REGISTER_MAP.keys())
-        for i in range(0, len(register_ids), chunk_size):
-            chunk = register_ids[i:i + chunk_size]
-            if not chunk:
-                continue
-            start_reg = min(chunk)
-            end_reg = max(chunk)
-            count = end_reg - start_reg + 1
-            try:
-                result = await self.hass.async_add_executor_job(
-                    lambda start_reg=start_reg, count=count: self._client.read_coils(start_reg, count=count, slave=self.slave_id)
-                )
-                if not result.isError():
-                    for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
-                        if reg_id in COIL_REGISTER_MAP and j < len(result.bits):
-                            coil_data[reg_id] = result.bits[j]
-                else:
-                    _LOGGER.warning("Error reading coil registers %d-%d: %s", start_reg, end_reg, result)
-            except Exception as err:
-                _LOGGER.warning("Failed to read coil registers %d-%d: %s", start_reg, end_reg, err)
+        
+        # Read only a few critical coils to avoid timeouts
+        critical_coils = [2, 6, 7, 18]  # Weather compensation and key settings
+        
+        for reg_id in critical_coils:
+            if reg_id in COIL_REGISTER_MAP:
+                try:
+                    result = await asyncio.wait_for(
+                        self.hass.async_add_executor_job(
+                            lambda reg=reg_id: client.read_coils(reg, count=1, slave=self.slave_id)
+                        ),
+                        timeout=3.0
+                    )
+                    if not result.isError():
+                        coil_data[reg_id] = result.bits[0]
+                    else:
+                        _LOGGER.debug("Error reading coil register %d: %s", reg_id, result)
+                except Exception as err:
+                    _LOGGER.debug("Failed to read coil register %d: %s", reg_id, err)
+        
         return coil_data
 
     def _calculate_derived_values(self, input_data: Dict[int, float], holding_data: Dict[int, float]) -> Dict[str, Any]:
@@ -197,7 +243,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             ):
                 delta_t = flow_temp - return_temp
                 heat_output_w = flow_rate_lph * 1.16 * delta_t
-                cop = heat_output_w / power_w
+                cop = heat_output_w / power_w if power_w > 0 else 0
                 calculated["cop"] = round(cop, 2)
                 calculated["heat_output_w"] = round(heat_output_w, 1)
                 calculated["delta_t"] = round(delta_t, 2)
@@ -206,22 +252,66 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         return calculated
 
     async def async_write_register(self, register: int, value: int) -> bool:
+        """Write to a holding register."""
+        client = ModbusTcpClient(
+            host=self.host,
+            port=self.port,
+            timeout=5,
+        )
+        
         try:
-            connected = await self.hass.async_add_executor_job(self._client.connect)
+            connected = await asyncio.wait_for(
+                self.hass.async_add_executor_job(client.connect),
+                timeout=10.0
+            )
             if not connected:
                 _LOGGER.error("Failed to connect for writing register %d", register)
                 return False
-            result = await self.hass.async_add_executor_job(
-                lambda register=register, value=value: self._client.write_register(register, value, slave=self.slave_id)
+            
+            result = await asyncio.wait_for(
+                self.hass.async_add_executor_job(
+                    lambda: client.write_register(register, value, slave=self.slave_id)
+                ),
+                timeout=5.0
             )
+            
             if result.isError():
                 _LOGGER.error("Error writing register %d: %s", register, result)
                 return False
+            
             _LOGGER.info("Successfully wrote value %d to register %d", value, register)
-            await self.async_request_refresh()
             return True
+            
         except Exception as err:
             _LOGGER.error("Failed to write register %d: %s", register, err)
+            return False
+        finally:
+            try:
+                await self.hass.async_add_executor_job(client.close)
+            except Exception:
+                pass
+
+    async def async_write_coil(self, address: int, value: bool) -> bool:
+        """Write to a coil register."""
+        try:
+            connected = await self.hass.async_add_executor_job(self._client.connect)
+            if not connected:
+                _LOGGER.error("Failed to connect for writing coil %d", address)
+                return False
+            
+            result = await self.hass.async_add_executor_job(
+                lambda: self._client.write_coil(address, value, slave=self.slave_id)
+            )
+            
+            if result.isError():
+                _LOGGER.error("Error writing coil %d: %s", address, result)
+                return False
+            
+            _LOGGER.info("Successfully wrote value %s to coil %d", value, address)
+            return True
+            
+        except Exception as err:
+            _LOGGER.error("Failed to write coil %d: %s", address, err)
             return False
         finally:
             try:
