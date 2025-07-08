@@ -1,4 +1,6 @@
-"""Improved number platform for Grant Aerona3 Heat Pump."""
+# number.py
+
+"""Improved number platform for Grant Aerona3 Heat Pump with enhanced debugging."""
 from __future__ import annotations
 
 import logging
@@ -17,32 +19,58 @@ from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Grant Aerona3 number entities."""
+    _LOGGER.info("Setting up Grant Aerona3 number entities")
+
+    # Check if coordinator exists
+    if DOMAIN not in hass.data:
+        _LOGGER.error("Domain %s not found in hass.data", DOMAIN)
+        return
+
+    if config_entry.entry_id not in hass.data[DOMAIN]:
+        _LOGGER.error("Config entry %s not found in hass.data[%s]", config_entry.entry_id, DOMAIN)
+        return
+
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
+    _LOGGER.info("Coordinator found: %s", type(coordinator).__name__)
 
     entities = []
+    # Debug: Check what's in HOLDING_REGISTER_MAP
+    _LOGGER.info("Total holding registers defined: %d", len(HOLDING_REGISTER_MAP))
+    writable_registers = [reg for reg, config in HOLDING_REGISTER_MAP.items() if config.get("writable", False)]
+    _LOGGER.info("Writable registers: %s", writable_registers)
 
-    # CRITICAL FIX: Create number entities for ALL writable holding registers
+    # Create number entities for ALL writable holding registers
     for register_id, config in HOLDING_REGISTER_MAP.items():
         if config.get("writable", False):
-            entities.append(
-                GrantAerona3HoldingNumber(coordinator, config_entry, register_id)
-            )
+            _LOGGER.info("Creating number entity for register %d: %s", register_id, config["name"])
+            try:
+                entity = GrantAerona3HoldingNumber(coordinator, config_entry, register_id)
+                entities.append(entity)
+                _LOGGER.debug("Successfully created entity for register %d", register_id)
+            except Exception as e:
+                _LOGGER.error("Failed to create entity for register %d: %s", register_id, e)
 
     # Add flow rate configuration entity
-    entities.append(
-        GrantAerona3FlowRateNumber(coordinator, config_entry)
-    )
+    try:
+        _LOGGER.info("Creating flow rate number entity")
+        entities.append(GrantAerona3FlowRateNumber(coordinator, config_entry))
+        _LOGGER.debug("Successfully created flow rate entity")
+    except Exception as e:
+        _LOGGER.error("Failed to create flow rate entity: %s", e)
 
-    _LOGGER.info("Creating %d number entities", len(entities))
-    async_add_entities(entities)
+    _LOGGER.info("Created %d number entities total", len(entities))
 
+    if entities:
+        async_add_entities(entities, True)  # Force update_before_add
+        _LOGGER.info("Successfully added %d number entities", len(entities))
+    else:
+        _LOGGER.warning("No number entities were created!")
 
 class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
     """Grant Aerona3 holding register number entity."""
@@ -59,7 +87,14 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         self._register_config = HOLDING_REGISTER_MAP[register_id]
 
         self._attr_unique_id = f"{config_entry.entry_id}_number_holding_{register_id}"
-        self._attr_name = f"{self._register_config['name']}"
+        self._attr_name = self._register_config['name']  # Remove ASHP prefix
+        self._attr_has_entity_name = True
+
+        _LOGGER.debug(
+            "Initializing number entity: %s (register %d)", 
+            self._attr_name, 
+            register_id
+        )
 
         # Device info
         self._attr_device_info = {
@@ -71,14 +106,13 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         }
 
         # Set number properties
-        self._attr_native_unit_of_measurement = self._register_config["unit"]
+        self._attr_native_unit_of_measurement = self._register_config.get("unit")
         self._attr_mode = NumberMode.BOX  # Use box mode for precise control
 
         # Use min/max/step from the register config, fallback to safe defaults
         self._attr_native_min_value = self._register_config.get("min", 0)
         self._attr_native_max_value = self._register_config.get("max", 100)
         self._attr_native_step = self._register_config.get("step", 1)
-
 
         # Set icon based on function
         name_lower = self._register_config["name"].lower()
@@ -98,50 +132,67 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         # Set entity category
         self._attr_entity_category = EntityCategory.CONFIG
 
+        _LOGGER.debug(
+            "Number entity configured: min=%s, max=%s, step=%s, unit=%s",
+            self._attr_native_min_value,
+            self._attr_native_max_value, 
+            self._attr_native_step,
+            self._attr_native_unit_of_measurement
+        )
+
     @property
     def native_value(self) -> Optional[float]:
         """Return the current value."""
+        if not self.coordinator.data:
+            _LOGGER.debug("No coordinator data available for register %d", self._register_id)
+            return None
+            
         holding_registers = self.coordinator.data.get("holding_registers", {})
         raw_value = holding_registers.get(self._register_id)
+        
         if raw_value is None:
+            _LOGGER.debug("No value found for register %d in coordinator data", self._register_id)
             return None
+            
         scale = self._register_config.get("scale", 1)
-        return raw_value * scale
+        scaled_value = raw_value * scale
+        
+        _LOGGER.debug(
+            "Register %d: raw=%s, scale=%s, scaled=%s", 
+            self._register_id, raw_value, scale, scaled_value
+        )
+        
+        return scaled_value
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
+        _LOGGER.info("Setting value %s for register %d (%s)", value, self._register_id, self._attr_name)
+        
         scale = self._register_config.get("scale", 1)
         raw_value = int(value / scale)
-        success = await self.coordinator.async_write_holding_register(self._register_id, raw_value)
+        
+        _LOGGER.debug("Scaled value %s to raw value %d for register %d", value, raw_value, self._register_id)
+        
+        # Use the correct method name from coordinator
+        success = await self.coordinator.async_write_register(self._register_id, raw_value)
         if success:
+            _LOGGER.info("Successfully wrote value to register %d, requesting refresh", self._register_id)
             await self.coordinator.async_request_refresh()
         else:
             _LOGGER.error("Failed to set value %s for %s", value, self._attr_name)
 
-
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return additional state attributes."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return {"register_address": self._register_id, "status": "not_configured"}
-
-        data = self.coordinator.data[register_key]
-
+        holding_registers = self.coordinator.data.get("holding_registers", {}) if self.coordinator.data else {}
+        raw_value = holding_registers.get(self._register_id)
+        
         attributes = {
             "register_address": self._register_id,
-            "description": data.get("description", ""),
-            "scale_factor": self._register_config["scale"],
-            "raw_value": data.get("raw_value"),
-            "available": data.get("available", True),
+            "scale_factor": self._register_config.get("scale", 1),
+            "raw_value": raw_value,
+            "available": raw_value is not None,
         }
-
-        # Add error information if register is not available
-        if not data.get("available", True):
-            attributes["error"] = data.get("error", "Register not available")
-            attributes["status"] = "unavailable"
-        else:
-            attributes["status"] = "available"
 
         # Add helpful information for specific setting types
         name_lower = self._register_config["name"].lower()
@@ -154,18 +205,33 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         elif "frost protection" in name_lower:
             attributes["tooltip"] = "Frost protection prevents system damage in cold weather"
 
+        if raw_value is None:
+            attributes["status"] = "not_configured"
+        else:
+            attributes["status"] = "available"
+
         return attributes
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
+        # Check if we have valid data from coordinator
+        if not self.coordinator.last_update_success:
+            _LOGGER.debug("Coordinator last update was not successful for register %d", self._register_id)
             return False
             
-        # Entity is available even if register is not readable (shows unavailable state)
-        return self.coordinator.last_update_success
-
+        # Check if we have holding register data
+        if not self.coordinator.data:
+            _LOGGER.debug("No coordinator data for register %d", self._register_id)
+            return False
+            
+        holding_registers = self.coordinator.data.get("holding_registers", {})
+        is_available = self._register_id in holding_registers
+        
+        if not is_available:
+            _LOGGER.debug("Register %d not found in holding_registers data", self._register_id)
+        
+        return is_available
 
 class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
     """Grant Aerona3 flow rate configuration number entity."""
@@ -179,7 +245,8 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_flow_rate_config"
-        self._attr_name = "Flow Rate"
+        self._attr_name = "Flow Rate"  # Remove ASHP prefix
+        self._attr_has_entity_name = True
         self._attr_native_unit_of_measurement = "L/min"
         self._attr_mode = NumberMode.BOX
         self._attr_native_min_value = 10.0
@@ -198,12 +265,16 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         }
 
         # Default flow rate - typical for residential Grant Aerona3
-        self._flow_rate = 30.0
+        self._flow_rate = getattr(coordinator, 'flow_rate_lpm', 30.0)
+        
+        _LOGGER.debug("Flow rate entity initialized with value: %s L/min", self._flow_rate)
 
     @property
     def native_value(self) -> float:
         """Return the current flow rate."""
-        return self._flow_rate
+        current_value = getattr(self.coordinator, 'flow_rate_lpm', self._flow_rate)
+        _LOGGER.debug("Flow rate current value: %s L/min", current_value)
+        return current_value
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the flow rate value."""
@@ -211,7 +282,12 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         _LOGGER.info("Flow rate set to %.1f L/min", value)
 
         # Store in coordinator for COP calculations
-        self.coordinator.flow_rate = value
+        self.coordinator.flow_rate_lpm = value
+
+    @property
+    def available(self) -> bool:
+        """Flow rate entity is always available."""
+        return True
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
