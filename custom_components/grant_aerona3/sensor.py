@@ -1,4 +1,5 @@
-"""Improved sensor platform for Grant Aerona3 Heat Pump with ashp_ prefixes."""
+# custom_components/grant_aerona3/sensor.py
+
 from __future__ import annotations
 
 import logging
@@ -26,7 +27,6 @@ from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP, HOLDING_REGI
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -64,7 +64,6 @@ async def async_setup_entry(
     _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
     async_add_entities(entities)
 
-
 class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
     """Base class for Grant Aerona3 sensors with common properties."""
 
@@ -88,7 +87,6 @@ class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
             "sw_version": "2.0.0",
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
-
 
 class GrantAerona3InputSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 input register sensor entity with ashp_ prefix."""
@@ -119,9 +117,13 @@ class GrantAerona3InputSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("input_registers", {}).get(self._register_id)
-        if raw_value is None:
+        if raw_value is None or raw_value == 65336:
             return None
-        
+
+        is_signed = self._register_config.get("signed", False)
+        if is_signed and raw_value > 32767:
+            raw_value -= 65536
+
         scale = self._register_config.get("scale", 1)
         offset = self._register_config.get("offset", 0)
         
@@ -169,7 +171,6 @@ class GrantAerona3InputSensor(GrantAerona3BaseSensor):
             "offset": self._register_config.get("offset", 0),
         }
 
-
 class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 holding register sensor entity with ashp_ prefix."""
 
@@ -199,9 +200,13 @@ class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("holding_registers", {}).get(self._register_id)
-        if raw_value is None:
+        if raw_value is None or raw_value == 65336:
             return None
-        
+
+        is_signed = self._register_config.get("signed", False)
+        if is_signed and raw_value > 32767:
+            raw_value -= 65536
+
         scale = self._register_config.get("scale", 1)
         offset = self._register_config.get("offset", 0)
         
@@ -244,7 +249,6 @@ class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
             "scale_factor": self._register_config.get("scale", 1),
             "offset": self._register_config.get("offset", 0),
         }
-
 
 class GrantAerona3PowerSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 calculated power sensor with ashp_ prefix."""
@@ -293,7 +297,6 @@ class GrantAerona3PowerSensor(GrantAerona3BaseSensor):
             "raw_power_value": input_regs.get(3, 0),
         }
 
-
 class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
     """Grant Aerona3 energy consumption sensor with ashp_ prefix."""
 
@@ -337,7 +340,6 @@ class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
             "calculation_method": "direct_register",
             "note": "Use utility_meter integration with power sensor for accurate daily tracking"
         }
-
 
 class GrantAerona3COPSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 Coefficient of Performance sensor with ashp_ prefix."""
@@ -392,7 +394,6 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
             "outdoor_temperature": input_regs.get(2, 0) * 0.1 if input_regs.get(2) else None,
         }
 
-
 class GrantAerona3EfficiencySensor(GrantAerona3BaseSensor):
     """Grant Aerona3 efficiency sensor with ashp_ prefix."""
 
@@ -428,7 +429,6 @@ class GrantAerona3EfficiencySensor(GrantAerona3BaseSensor):
         
         return None
 
-
 class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 weather compensation sensor with ashp_ prefix."""
 
@@ -462,7 +462,6 @@ class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
             return round(comp_temp * 0.1, 1)  # Adjust scale factor
         
         return None
-
 
 class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 daily cost sensor with ashp_ prefix."""
@@ -507,7 +506,6 @@ class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
             "electricity_rate": "0.30 GBP/kWh",
             "note": "Estimated cost - set up utility_meter for accurate tracking"
         }
-
 
 class GrantAerona3MonthlyCostSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 monthly cost sensor with ashp_ prefix."""
