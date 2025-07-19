@@ -1,69 +1,69 @@
 blueprint:
-  name: Grant Aerona3 – Adaptive Weather-Compensation (Zone 1)
+  name: "Grant Aerona3 Adaptive Weather Compensation Zone 1"
   description: >
-    Dynamically adjusts the Grant Aerona3 flow temperature every 15 min
+    Dynamically adjusts the Grant Aerona3 flow temperature every 15 minutes
     using forecast temperature, forecast wind-chill, actual outdoor conditions,
-    and the average indoor temperature. If the “Heating Weather Compensation
-    Zone 1” switch is ON, the blueprint nudges Max-Flow (Tm1); otherwise it
+    and the average indoor temperature. If the Heating Weather Compensation
+    Zone 1 switch is ON, the blueprint adjusts Max-Flow (Tm1); otherwise it
     drives the Fixed-Flow set-point.
   domain: automation
   input:
     forecast_weather_entity:
-      name: Weather entity that supplies a 1-hour forecast
+      name: "Weather entity that supplies a 1-hour forecast"
       selector:
         entity:
           domain: weather
     outdoor_temp_sensor:
-      name: Local outdoor temperature sensor
+      name: "Local outdoor temperature sensor"
       selector:
         entity:
           domain: sensor
           device_class: temperature
     wind_speed_sensor:
-      name: Local wind-speed sensor (m/s)
+      name: "Local wind-speed sensor (m/s)"
       selector:
         entity:
           domain: sensor
           device_class: speed
     indoor_temp_sensors:
-      name: List of indoor temperature sensors to average
+      name: "List of indoor temperature sensors to average"
       selector:
         entity:
           multiple: true
           domain: sensor
           device_class: temperature
     weather_comp_switch:
-      name: Heating Weather-Compensation switch (Zone 1) – coil register 2
+      name: "Heating Weather-Compensation switch (Zone 1)"
       selector:
         entity:
           domain: switch
     fixed_flow_number:
-      name: number.fixed_flow_temp_zone1  (register 2)
+      name: "Fixed Flow Temp Zone 1 (register 2)"
       selector:
         entity:
           domain: number
     max_flow_number:
-      name: number.max_flow_temp_zone1    (register 3 / Tm1)
+      name: "Max Flow Temp Zone 1 (register 3 / Tm1)"
       selector:
         entity:
           domain: number
     min_flow_number:
-      name: number.min_flow_temp_zone1    (register 4 / Tm2)
+      name: "Min Flow Temp Zone 1 (register 4 / Tm2)"
       selector:
         entity:
           domain: number
     min_outdoor_te1:
-      name: number.ashp_min_outdoor_air_temperature_zone1 (Te1 – register 5)
+      name: "Min Outdoor Air Temperature Zone 1 (Te1 - register 5)"
       selector:
         entity:
           domain: number
     max_outdoor_te2:
-      name: number.ashp_max_outdoor_air_temperature_zone1 (Te2 – register 6)
+      name: "Max Outdoor Air Temperature Zone 1 (Te2 - register 6)"
       selector:
         entity:
           domain: number
     target_room_temp:
-      name: Desired average indoor temp (°C)
+      name: "Desired average indoor temp (°C)"
       default: 21.0
       selector:
         number:
@@ -71,7 +71,7 @@ blueprint:
           max: 25
           step: 0.1
     anticipation_hours:
-      name: Forecast hours to look ahead
+      name: "Forecast hours to look ahead"
       default: 1
       selector:
         number:
@@ -79,7 +79,7 @@ blueprint:
           max: 6
           step: 1
     update_interval_mins:
-      name: How often to recalc (minutes)
+      name: "How often to recalc (minutes)"
       default: 15
       selector:
         number:
@@ -91,11 +91,11 @@ mode: single
 
 variables:
   avg_indoor: >
-    {% set temps = (states | selectattr('entity_id','in',input.indoor_temp_sensors) | map(attribute='state') | map('float', default=none) | list) %}
-    {{ (temps | select('defined') | list | average(default=input.target_room_temp)) | round(1) }}
+    {% set temps = (states | selectattr('entity_id','in',anticipation_hours) | map(attribute='state') | map('float', default=none) | list) %}
+    {{ (temps | select('defined') | list | average(default=target_room_temp)) | round(1) }}
   forecast: >
-    {%- set hrs = input.anticipation_hours | int %}
-    {{ state_attr(input.forecast_weather_entity,'forecast')[hrs - 1] }}
+    {%- set hrs = anticipation_hours | int %}
+    {{ state_attr(forecast_weather_entity,'forecast')[hrs - 1] }}
   forecast_temp: "{{ forecast.temperature | float(0) }}"
   forecast_wind_mps: "{{ forecast.wind_speed | float(0) }}"
   forecast_wind_kmh: "{{ (forecast_wind_mps*3.6) | round(1) }}"
@@ -107,12 +107,12 @@ variables:
     {% else %}
       {{ T }}
     {% endif %}
-  actual_outdoor: "{{ states(input.outdoor_temp_sensor) | float(0) }}"
+  actual_outdoor: "{{ states(outdoor_temp_sensor) | float(0) }}"
   eff_outdoor: "{{ [wind_chill | float, forecast_temp | float, actual_outdoor] | min }}"
-  Tm1: "{{ states(input.max_flow_number) | float(45) }}"
-  Tm2: "{{ states(input.min_flow_number) | float(30) }}"
-  Te1: "{{ states(input.min_outdoor_te1) | float(-7) }}"
-  Te2: "{{ states(input.max_outdoor_te2) | float(15) }}"
+  Tm1: "{{ states(max_flow_number) | float(45) }}"
+  Tm2: "{{ states(min_flow_number) | float(30) }}"
+  Te1: "{{ states(min_outdoor_te1) | float(-7) }}"
+  Te2: "{{ states(max_outdoor_te2) | float(15) }}"
   slope: "{{ (Tm2 - Tm1) / (Te2 - Te1) }}"
   base_target: >
     {% if eff_outdoor <= Te1 %}
@@ -122,44 +122,39 @@ variables:
     {% else %}
       {{ (Tm1 + slope * (eff_outdoor - Te1)) }}
     {% endif %}
-  indoor_delta: "{{ input.target_room_temp | float - avg_indoor }}"
+  indoor_delta: "{{ target_room_temp | float - avg_indoor }}"
   k_p: 2
-  k_i: 0
   delta_indoor: "{{ k_p * indoor_delta }}"
   calc_target: "{{ (base_target + delta_indoor) | round(1) }}"
   clamped_target: >
     {% set min_f = Tm2 %}
-    {% set max_f = (input.max_flow_number | states) | float(60) %}
+    {% set max_f = 60 %}
     {{ [max_f, [min_f, calc_target]|max ] | min }}
 
 trigger:
   - platform: time_pattern
-    minutes: "/{{ input.update_interval_mins }}"
+    minutes: "/{{ update_interval_mins }}"
 
 action:
   - variables:
-      use_weather_comp: "{{ is_state(input.weather_comp_switch,'on') }}"
+      use_weather_comp: "{{ is_state(weather_comp_switch,'on') }}"
   - choose:
       - conditions: "{{ use_weather_comp }}"
         sequence:
           - service: number.set_value
             target:
-              entity_id: "{{ input.max_flow_number }}"
+              entity_id: "{{ max_flow_number }}"
             data:
               value: "{{ clamped_target }}"
       - conditions: "{{ not use_weather_comp }}"
         sequence:
           - service: number.set_value
             target:
-              entity_id: "{{ input.fixed_flow_number }}"
+              entity_id: "{{ fixed_flow_number }}"
             data:
               value: "{{ clamped_target }}"
   - service: system_log.write
     data:
       message: >
-        Grant Aerona3 adaptive WC →
-        use_comp={{ use_weather_comp }},
-        eff_out={{ eff_outdoor }} °C,
-        avg_in={{ avg_indoor }} °C,
-        target_flow={{ clamped_target }} °C
+        Grant Aerona3 adaptive WC: use_comp={{ use_weather_comp }}, eff_out={{ eff_outdoor }}°C, avg_in={{ avg_indoor }}°C, target_flow={{ clamped_target }}°C
       level: info
