@@ -1,0 +1,160 @@
+blueprint:
+  name: "Grant Aerona3 Adaptive Weather Compensation Zone 2"
+  description: >
+    Dynamically adjusts the Grant Aerona3 flow temperature for Zone 2 every 15 minutes
+    using forecast temperature, forecast wind-chill, actual outdoor conditions,
+    and the average indoor temperature. If the Heating Weather Compensation
+    Zone 2 switch is ON, the blueprint adjusts Max-Flow (Tm1); otherwise it
+    drives the Fixed-Flow set-point.
+  domain: automation
+  input:
+    forecast_weather_entity:
+      name: "Weather entity that supplies a 1-hour forecast"
+      selector:
+        entity:
+          domain: weather
+    outdoor_temp_sensor:
+      name: "Local outdoor temperature sensor"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    wind_speed_sensor:
+      name: "Local wind-speed sensor (m/s)"
+      selector:
+        entity:
+          domain: sensor
+          device_class: speed
+    indoor_temp_sensors:
+      name: "List of indoor temperature sensors to average (Zone 2)"
+      selector:
+        entity:
+          multiple: true
+          domain: sensor
+          device_class: temperature
+    weather_comp_switch:
+      name: "Heating Weather-Compensation switch (Zone 2)"
+      selector:
+        entity:
+          domain: switch
+    fixed_flow_number:
+      name: "Fixed Flow Temp Zone 2 (register 7)"
+      selector:
+        entity:
+          domain: number
+    max_flow_number:
+      name: "Max Flow Temp Zone 2 (register 8 / Tm1)"
+      selector:
+        entity:
+          domain: number
+    min_flow_number:
+      name: "Min Flow Temp Zone 2 (register 9 / Tm2)"
+      selector:
+        entity:
+          domain: number
+    min_outdoor_te1:
+      name: "Min Outdoor Air Temperature Zone 2 (Te1 - register 10)"
+      selector:
+        entity:
+          domain: number
+    max_outdoor_te2:
+      name: "Max Outdoor Air Temperature Zone 2 (Te2 - register 11)"
+      selector:
+        entity:
+          domain: number
+    target_room_temp:
+      name: "Desired average indoor temp (°C) for Zone 2"
+      default: 21.0
+      selector:
+        number:
+          min: 15
+          max: 25
+          step: 0.1
+    anticipation_hours:
+      name: "Forecast hours to look ahead"
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 6
+          step: 1
+    update_interval_mins:
+      name: "How often to recalc (minutes)"
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 60
+          step: 5
+
+mode: single
+
+variables:
+  avg_indoor: >
+    {% set temps = (states | selectattr('entity_id','in',indoor_temp_sensors) | map(attribute='state') | map('float', default=none) | list) %}
+    {{ (temps | select('defined') | list | average(default=target_room_temp)) | round(1) }}
+  forecast: >
+    {%- set hrs = anticipation_hours | int %}
+    {{ state_attr(forecast_weather_entity,'forecast')[hrs - 1] }}
+  forecast_temp: "{{ forecast.temperature | float(0) }}"
+  forecast_wind_mps: "{{ forecast.wind_speed | float(0) }}"
+  forecast_wind_kmh: "{{ (forecast_wind_mps*3.6) | round(1) }}"
+  wind_chill: >
+    {%- set T = forecast_temp %}
+    {%- set V = forecast_wind_kmh %}
+    {% if T <= 10 and V >= 4 %}
+      {{ 13.12 + 0.6215*T - 11.37*V**0.16 + 0.3965*T*V**0.16 }}
+    {% else %}
+      {{ T }}
+    {% endif %}
+  actual_outdoor: "{{ states(outdoor_temp_sensor) | float(0) }}"
+  eff_outdoor: "{{ [wind_chill | float, forecast_temp | float, actual_outdoor] | min }}"
+  Tm1: "{{ states(max_flow_number) | float(45) }}"
+  Tm2: "{{ states(min_flow_number) | float(30) }}"
+  Te1: "{{ states(min_outdoor_te1) | float(-7) }}"
+  Te2: "{{ states(max_outdoor_te2) | float(15) }}"
+  slope: "{{ (Tm2 - Tm1) / (Te2 - Te1) }}"
+  base_target: >
+    {% if eff_outdoor <= Te1 %}
+      {{ Tm1 }}
+    {% elif eff_outdoor >= Te2 %}
+      {{ Tm2 }}
+    {% else %}
+      {{ (Tm1 + slope * (eff_outdoor - Te1)) }}
+    {% endif %}
+  indoor_delta: "{{ target_room_temp | float - avg_indoor }}"
+  k_p: 2
+  delta_indoor: "{{ k_p * indoor_delta }}"
+  calc_target: "{{ (base_target + delta_indoor) | round(1) }}"
+  clamped_target: >
+    {% set min_f = Tm2 %}
+    {% set max_f = 60 %}
+    {{ [max_f, [min_f, calc_target]|max ] | min }}
+
+trigger:
+  - platform: time_pattern
+    minutes: "/{{ update_interval_mins }}"
+
+action:
+  - variables:
+      use_weather_comp: "{{ is_state(weather_comp_switch,'on') }}"
+  - choose:
+      - conditions: "{{ use_weather_comp }}"
+        sequence:
+          - service: number.set_value
+            target:
+              entity_id: "{{ max_flow_number }}"
+            data:
+              value: "{{ clamped_target }}"
+      - conditions: "{{ not use_weather_comp }}"
+        sequence:
+          - service: number.set_value
+            target:
+              entity_id: "{{ fixed_flow_number }}"
+            data:
+              value: "{{ clamped_target }}"
+  - service: system_log.write
+    data:
+      message: >
+        Grant Aerona3 adaptive WC (Zone 2): use_comp={{ use_weather_comp }}, eff_out={{ eff_outdoor }}°C, avg_in={{ avg_indoor }}°C, target_flow={{ clamped_target }}°C
+      level: info
