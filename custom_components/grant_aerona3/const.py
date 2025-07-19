@@ -260,7 +260,7 @@ HOLDING_REGISTER_MAP = {
     2: {
         "name": "Fixed Flow Temp Zone 1",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
         "offset": 0,
         "writable": True,
