@@ -76,7 +76,8 @@ blueprint:
     update_interval_mins:
       name: How often to recalc (minutes)
       default: 15
-      selector: number:
+      selector: 
+      number:
         min: 5
         max: 60
         step: 5
