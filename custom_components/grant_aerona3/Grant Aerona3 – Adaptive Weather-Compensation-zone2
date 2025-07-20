@@ -133,7 +133,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: "/{{ update_interval_mins }}"
+    minutes: "15"
 
 action:
   - variables:
