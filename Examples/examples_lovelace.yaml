@@ -1,506 +1,973 @@
-# Grant Aerona3 Heat Pump Dashboard Cards
-# Copy these card configurations to your Lovelace dashboard
-
-#==============================================================================
-# MAIN OVERVIEW CARD
-#==============================================================================
-
-# Primary status card showing key metrics
-type: entities
-title: 🔥 Heat Pump Overview
-show_header_toggle: false
-entities:
-  - entity: binary_sensor.system_status
-    name: System Status
-    icon: mdi:power
-  - entity: sensor.cop
-    name: Efficiency (COP)
-    icon: mdi:gauge
-  - entity: sensor.power_consumption
-    name: Power Usage
-    icon: mdi:flash
-  - entity: sensor.outdoor_air_temperature
-    name: Outdoor Temperature
-    icon: mdi:thermometer
-  - entity: sensor.outgoing_water_temperature
-    name: Flow Temperature
-    icon: mdi:thermometer-water
-  - entity: climate.zone_1
-    name: Zone 1 Control
-    icon: mdi:home-thermometer
-
-#==============================================================================
-# GAUGE CARDS FOR KEY METRICS
-#==============================================================================
-
-# COP Efficiency Gauge
-type: gauge
-entity: sensor.cop
-name: Heat Pump Efficiency
-unit: COP
-min: 0
-max: 6
-severity:
-  green: 3
-  yellow: 2
-  red: 0
-needle: true
-
----
-
-# Power Consumption Gauge
-type: gauge
-entity: sensor.power_consumption
-name: Power Consumption
-min: 0
-max: 8000  # Adjust based on your heat pump size
-severity:
-  green: 0
-  yellow: 4000
-  red: 6000
-needle: true
-
----
-
-# Outdoor Temperature Gauge
-type: gauge
-entity: sensor.outdoor_air_temperature
-name: Outdoor Temperature
-min: -20
-max: 30
-severity:
-  red: -20
-  yellow: 0
-  green: 10
-needle: true
-
-#==============================================================================
-# HISTORICAL DATA CARDS
-#==============================================================================
-
-# COP History Graph
-type: history-graph
-title: 📈 Heat Pump Efficiency Trend
-hours_to_show: 24
-refresh_interval: 300
-entities:
-  - entity: sensor.cop
-    name: COP
-  - entity: sensor.outdoor_air_temperature
-    name: Outdoor Temp
-    y_axis: secondary
-
----
-
-# Power and Temperature History
-type: history-graph
-title: 📊 Power & Temperature History
-hours_to_show: 48
-refresh_interval: 300
-entities:
-  - entity: sensor.power_consumption
-    name: Power (W)
-  - entity: sensor.outgoing_water_temperature
-    name: Flow Temp (°C)
-    y_axis: secondary
-  - entity: sensor.return_water_temperature
-    name: Return Temp (°C)
-    y_axis: secondary
-
-#==============================================================================
-# DETAILED STATUS CARDS
-#==============================================================================
-
-# System Status Details
-type: entities
-title: 🔍 System Status Details
-show_header_toggle: false
-entities:
-  - entity: sensor.selected_operating_mode
-    name: Operating Mode
+views:
+  - title: Heating Controls
+    path: heating
+    icon: mdi:radiator
+    background: >-
+      left / contain no-repeat
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed
+    cards:
+      - type: entities
+        title: 🔥 Heat Pump Overview
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.ashp_communication_status
+            name: System Status
+            icon: mdi:power
+          - entity: sensor.ashp_current_power
+            name: Power Usage
+            icon: mdi:flash
+          - entity: sensor.ashp_cop
+            name: Efficiency (COP)
+            icon: mdi:gauge
+          - entity: sensor.ashp_cop
+          - entity: sensor.ashp_delta_t
+          - entity: climate.ashp_zone_1
+            name: Zone 1 Control
+            icon: mdi:home-thermometer
+          - entity: climate.ashp_zone_2
+            icon: mdi:home-thermometer
+      - type: entities
+        title: 🌡️ Temperature Sensors
+        show_header_toggle: false
+        entities:
+          - entity: sensor.outdoor_air_temperature
+            name: Outdoor Air
+            icon: mdi:thermometer
+          - entity: sensor.outgoing_water_temperature
+            name: Flow Water
+            icon: mdi:thermometer-water
+          - entity: sensor.return_water_temperature
+            name: Return Water
+            icon: mdi:thermometer-water
+          - entity: sensor.discharge_temperature
+            name: Compressor Discharge
+            icon: mdi:thermometer-high
+          - entity: sensor.suction_temperature
+            name: Compressor Suction
+            icon: mdi:thermometer-low
+          - entity: sensor.defrost_temperature
+            name: Defrost Sensor
+            icon: mdi:snowflake
+          - type: conditional
+            conditions:
+              - entity: sensor.dhw_tank_temperature
+                state_not: unavailable
+            row:
+              entity: sensor.ashp_dhw_tank_temperature
+              name: DHW Tank
+              icon: mdi:water-thermometer
+      - type: entities
+        title: 🔍 System Status Details
+        show_header_toggle: false
+        entities:
+          - entity: sensor.dhw_operating_mode_display
+            name: Operating Mode
+            icon: mdi:cog
+          - entity: sensor.ashp_current_power
+          - entity: sensor.compressor_operating_frequency
+            name: Compressor Frequency
+            icon: mdi:sine-wave
+          - entity: binary_sensor.ashp_defrost_active
+            name: Defrost Mode
+            icon: mdi:snowflake-melt
+          - entity: sensor.fan_control_number_of_rotation
+            name: Fan Speed
+            icon: mdi:fan
+          - entity: sensor.water_pump_control_number_of_rotation
+            name: Pump Speed
+            icon: mdi:pump
+          - entity: number.ashp_flow_rate
+    badges:
+      - type: entity
+        show_name: false
+        show_state: true
+        show_icon: true
+        entity: sensor.ashp_outdoor_air_temperature
+      - type: entity
+        show_name: false
+        show_state: true
+        show_icon: true
+        entity: sensor.ashp_current_power
+      - type: entity
+        show_name: false
+        show_state: true
+        show_icon: true
+        entity: sensor.ashp_compressor_operating_frequency
+      - type: entity
+        show_name: false
+        show_state: true
+        show_icon: true
+        entity: sensor.ashp_outgoing_water_temperature
+      - type: entity
+        show_name: false
+        show_state: true
+        show_icon: true
+        entity: sensor.ashp_return_water_temperature
+  - title: DHW Controls
+    path: dhw
+    icon: mdi:water-thermometer
+    background: >-
+      left / contain no-repeat
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            title: DHW Status
+            entities:
+              - entity: sensor.ashp_dhw_tank_temperature
+                name: Current DHW Temperature
+                icon: mdi:thermometer-water
+              - entity: sensor.dhw_operating_mode_display
+                name: DHW Operating Mode
+                icon: mdi:water-outline
+          - type: entities
+            title: DHW Control
+            entities:
+              - entity: switch.anti_legionella_function_2
+                name: Anti-Legionella Function
+                icon: mdi:bacteria
+              - entity: sensor.dhw_legionella_cycle_day_display
+                name: Legionella Cycle Day
+                icon: mdi:calendar
+              - entity: sensor.anti_legionella_set_point
+                name: Legionella Set Point
+                icon: mdi:clock
+          - type: entities
+            title: DHW Temperature Settings
+            entities:
+              - entity: sensor.dhw_comfort_set_temperature
+                name: Comfort Temperature
+                icon: mdi:thermometer-plus
+              - entity: sensor.dhw_economy_set_temperature
+                name: Economy Temperature
+                icon: mdi:thermometer-minus
+              - entity: sensor.dhw_over_boost_mode_set_point
+                name: Boost Temperature
+                icon: mdi:thermometer-chevron-up
+              - entity: sensor.dhw_setpoint_hysteresis
+                name: DHW Hysteresis
+                icon: mdi:thermometer-lines
+          - type: vertical-stack
+            cards:
+              - type: custom:mushroom-title-card
+                title: Quick DHW Actions
+              - type: horizontal-stack
+                cards:
+                  - type: custom:button-card
+                    name: Comfort
+                    icon: mdi:home-thermometer
+                    color: green
+                    tap_action:
+                      action: call-service
+                      service: number.set_value
+                      target:
+                        entity_id: number.dhw_comfort_temperature
+                      data:
+                        value: 55
+                    styles:
+                      card:
+                        - height: 50px
+                        - font-size: 12px
+                  - type: custom:button-card
+                    name: Economy
+                    icon: mdi:leaf
+                    color: blue
+                    tap_action:
+                      action: call-service
+                      service: number.set_value
+                      target:
+                        entity_id: number.dhw_economy_temperature
+                      data:
+                        value: 45
+                    styles:
+                      card:
+                        - height: 50px
+                        - font-size: 12px
+              - type: custom:button-card
+                name: Boost Mode
+                icon: mdi:rocket-launch
+                color: red
+                tap_action:
+                  action: call-service
+                  service: number.set_value
+                  target:
+                    entity_id: number.dhw_boost_temperature
+                  data:
+                    value: 60
+                styles:
+                  card:
+                    - height: 50px
+                    - font-size: 12px
+  - title: Performance
+    path: performance
+    icon: mdi:chart-line
+    background: >-
+      left / contain no-repeat
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed    
+    cards:
+      - type: energy-date-selection
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            entity: sensor.ashp_current_power
+            min: 0
+            max: 5000
+            needle: true
+            name: Power Consumption
+            severity:
+              green: 0
+              yellow: 1000
+              red: 3000
+          - type: gauge
+            entity: sensor.ashp_cop
+            min: 0
+            max: 8
+            needle: true
+            name: COP
+            severity:
+              green: 3.5
+              yellow: 2
+              red: 0
+            unit: null
+      - type: horizontal-stack
+        cards:
+          - type: entities
+            title: Energy Consumption
+            entities:
+              - entity: sensor.ashp_current_consumption_value
+                name: Total Energy
+                icon: mdi:counter
+              - entity: sensor.daily_energy
+                name: Daily Energy
+                icon: mdi:calendar-today
+              - entity: sensor.weekly_energy
+                name: Weekly Energy
+                icon: mdi:calendar-week
+              - entity: sensor.monthly_energy
+                name: Monthly Energy
+                icon: mdi:calendar-month
+      - type: horizontal-stack
+        cards:
+          - type: entities
+            title: COP Information
+            entities:
+              - entity: sensor.ashp_coefficient_of_performance
+                name: Current COP
+                icon: mdi:gauge
+              - name: Enhanced COP Calculation
+                type: custom:mushroom-template-card
+                primary: Enhanced COP
+                secondary: >-
+                  {% set power = states('sensor.power_consumption')|float(0) %}
+                  {% set flow_temp =
+                  states('sensor.outgoing_water_temperature')|float(0) %} {% set
+                  return_temp =
+                  states('sensor.return_water_temperature')|float(0) %} {% set
+                  flow_rate =
+                  states('input_number.heat_pump_flow_rate')|float(28) %} {% set
+                  delta_t = flow_temp - return_temp %} {% if power > 100 and
+                  delta_t > 0 %}
+                    {% set heat_output = 4.2 * flow_rate * delta_t / 60 %}
+                    {% set cop = heat_output / (power / 1000) %}
+                    {{ cop | round(2) }}
+                  {% else %}
+                    Not operating
+                  {% endif %}
+                icon: mdi:calculator
+                icon_color: green
+              - entity: sensor.ashp_current_consumption_value
+              - entity: number.ashp_flow_rate
+              - entity: sensor.ashp_outgoing_water_temperature
+              - entity: sensor.ashp_return_water_temperature
+      - type: horizontal-stack
+        cards:
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Power & Efficiency
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            series:
+              - entity: sensor.ashp_current_power
+                name: Power (W)
+                color: orange
+                stroke_width: 2
+                yaxis_id: power
+              - entity: sensor.ashp_cop
+                name: COP
+                color: green
+                stroke_width: 2
+                yaxis_id: cop
+            yaxis:
+              - id: power
+                min: 0
+                decimals: 0
+                apex_config:
+                  title:
+                    text: Power (W)
+              - id: cop
+                opposite: true
+                min: 0
+                max: 6
+                decimals: 1
+                apex_config:
+                  title:
+                    text: COP
+      - type: horizontal-stack
+        cards:
+          - type: vertical-stack
+            cards:
+              - type: custom:apexcharts-card
+                header:
+                  show: true
+                  title: Temperature Monitoring
+                  show_states: true
+                graph_span: 12h
+                series:
+                  - entity: sensor.outgoing_water_temperature
+                    name: Flow
+                    color: '#ff7f0e'
+                  - entity: sensor.return_water_temperature
+                    name: Return
+                    color: '#1f77b4'
+                  - entity: sensor.outdoor_air_temperature
+                    name: Outdoor
+                    color: '#2ca02c'
+  - title: System Settings
+    path: settings
     icon: mdi:cog
-  - entity: sensor.compressor_operating_frequency
-    name: Compressor Frequency
-    icon: mdi:sine-wave
-  - entity: binary_sensor.defrost_mode
-    name: Defrost Mode
-    icon: mdi:snowflake-melt
-  - entity: binary_sensor.error_status
-    name: Error Status
-    icon: mdi:alert-circle
-  - entity: sensor.fan_control_number_of_rotation
-    name: Fan Speed
-    icon: mdi:fan
-  - entity: sensor.water_pump_control_number_of_rotation
-    name: Pump Speed
-    icon: mdi:pump
-
----
-
-# Temperature Sensors
-type: entities
-title: 🌡️ Temperature Sensors
-show_header_toggle: false
-entities:
-  - entity: sensor.outdoor_air_temperature
-    name: Outdoor Air
-    icon: mdi:thermometer
-  - entity: sensor.outgoing_water_temperature
-    name: Flow Water
-    icon: mdi:thermometer-water
-  - entity: sensor.return_water_temperature
-    name: Return Water
-    icon: mdi:thermometer-water
-  - entity: sensor.discharge_temperature
-    name: Compressor Discharge
-    icon: mdi:thermometer-high
-  - entity: sensor.suction_temperature
-    name: Compressor Suction
-    icon: mdi:thermometer-low
-  - entity: sensor.defrost_temperature
-    name: Defrost Sensor
-    icon: mdi:snowflake
-  - type: conditional
-    conditions:
-      - entity: sensor.dhw_tank_temperature
-        state_not: unavailable
-    row:
-      entity: sensor.dhw_tank_temperature
-      name: DHW Tank
-      icon: mdi:water-thermometer
-
-#==============================================================================
-# CONTROL CARDS
-#==============================================================================
-
-# Main Controls
-type: entities
-title: ⚙️ Heat Pump Controls
-show_header_toggle: false
-entities:
-  - entity: climate.zone_1
-    name: Zone 1 Control
-  - type: conditional
-    conditions:
-      - entity: climate.zone_2
-        state_not: unavailable
-    row:
-      entity: climate.zone_2
-      name: Zone 2 Control
-  - entity: number.fixed_flow_temp_zone_1
-    name: Zone 1 Flow Temperature
-    icon: mdi:thermometer-water
-  - entity: number.flow_rate
-    name: Flow Rate Configuration
-    icon: mdi:water-pump
-
----
-
-# Weather Compensation Controls
-type: entities
-title: 🌤️ Weather Compensation
-show_header_toggle: false
-entities:
-  - entity: switch.heating_weather_compensation_zone_1
-    name: Zone 1 Weather Compensation
-    icon: mdi:weather-partly-cloudy
-  - type: conditional
-    conditions:
-      - entity: switch.heating_weather_compensation_zone_2
-        state_not: unavailable
-    row:
-      entity: switch.heating_weather_compensation_zone_2
-      name: Zone 2 Weather Compensation
-      icon: mdi:weather-partly-cloudy
-  - entity: number.min_outdoor_air_temperature_zone1
-    name: Min Outdoor Temperature
-    icon: mdi:thermometer-minus
-  - entity: number.max_outdoor_air_temperature_zone1
-    name: Max Outdoor Temperature
-    icon: mdi:thermometer-plus
-  - entity: number.max_flow_temp_zone1
-    name: Max Flow Temperature
-    icon: mdi:thermometer-water
-  - entity: number.min_flow_temp_zone1
-    name: Min Flow Temperature
-    icon: mdi:thermometer-water
-
----
-
-# DHW (Hot Water) Controls
-type: conditional
-conditions:
-  - entity: sensor.dhw_tank_temperature
-    state_not: unavailable
-card:
-  type: entities
-  title: 🚿 Hot Water Controls
-  show_header_toggle: false
-  entities:
-    - entity: sensor.dhw_tank_temperature
-      name: Tank Temperature
-      icon: mdi:water-thermometer
-    - entity: number.dhw_comfort_set_temperature
-      name: Comfort Temperature
-      icon: mdi:thermometer-water
-    - entity: number.dhw_economy_set_temperature
-      name: Economy Temperature
-      icon: mdi:thermometer-water
-    - entity: switch.anti_legionella_function
-      name: Anti-Legionella
-      icon: mdi:shield-check
-    - entity: number.anti_legionella_set_point
-      name: Legionella Temperature
-      icon: mdi:thermometer-high
-
-#==============================================================================
-# SAFETY & PROTECTION CARDS
-#==============================================================================
-
-# Frost Protection Settings
-type: entities
-title: ❄️ Frost Protection
-show_header_toggle: false
-entities:
-  - entity: switch.frost_protection_based_on_outdoor_temperature
-    name: Outdoor Frost Protection
-    icon: mdi:snowflake
-  - entity: switch.frost_protection_based_on_room_temperature
-    name: Room Frost Protection
-    icon: mdi:home-thermometer
-  - entity: switch.frost_protection_based_on_flow_temp
-    name: Water Frost Protection
-    icon: mdi:pipe-leak
-  - entity: number.start_temperature_of_frost_protection_on_outdoor_air_temp
-    name: Outdoor Trigger Temperature
-    icon: mdi:thermometer-alert
-  - entity: number.water_temperature_of_frost_protection
-    name: Protection Water Temperature
-    icon: mdi:thermometer-water
-
-#==============================================================================
-# ENERGY MONITORING CARDS
-#==============================================================================
-
-# Energy Statistics Card
-type: statistics-graph
-title: ⚡ Energy Consumption
-stat_types:
-  - mean
-  - min
-  - max
-period: day
-days_to_show: 7
-entities:
-  - sensor.power_consumption
-
----
-
-# Energy Usage Comparison
-type: energy-usage-graph
-title: 📊 Daily Energy Usage
-entities:
-  - entity: sensor.energy_consumption
-    name: Heat Pump
-
----
-
-# COP Statistics
-type: statistics-graph
-title: 📈 Efficiency Statistics (COP)
-stat_types:
-  - mean
-  - min
-  - max
-period: day
-days_to_show: 14
-entities:
-  - sensor.cop
-
-#==============================================================================
-# DIAGNOSTIC CARDS
-#==============================================================================
-
-# Diagnostic Information
-type: entities
-title: 🔧 Diagnostic Information
-show_header_toggle: false
-state_color: true
-entities:
-  - entity: binary_sensor.system_status
-    name: System Running
-    icon: mdi:power
-  - entity: binary_sensor.error_status
-    name: Error Status
-    icon: mdi:alert-circle
-  - entity: sensor.compressor_operating_frequency
-    name: Compressor Load
-    icon: mdi:gauge
-  - entity: binary_sensor.defrost_mode
-    name: Defrost Active
-    icon: mdi:snowflake-melt
-  - type: divider
-  - entity: switch.terminal_26_27_flow_switch
-    name: Flow Switch
-    icon: mdi:pipe-valve
-  - entity: switch.terminal_15_16_32_rs485_mod_bus
-    name: Modbus Connection
-    icon: mdi:connection
-
-#==============================================================================
-# COMPACT MOBILE CARDS
-#==============================================================================
-
-# Mobile-friendly overview
-type: glance
-title: 🔥 Heat Pump Quick View
-columns: 2
-show_name: true
-show_state: true
-entities:
-  - entity: sensor.cop
-    name: COP
-  - entity: sensor.power_consumption
-    name: Power
-  - entity: sensor.outdoor_air_temperature
-    name: Outdoor
-  - entity: sensor.outgoing_water_temperature
-    name: Flow Temp
-  - entity: binary_sensor.system_status
-    name: Status
-  - entity: binary_sensor.defrost_mode
-    name: Defrost
-
-#==============================================================================
-# CUSTOM BUTTON CARDS (requires custom:button-card)
-#==============================================================================
-
-# COP Status Button (if you have custom:button-card installed)
-type: custom:button-card
-entity: sensor.cop
-name: Heat Pump Efficiency
-show_state: true
-show_icon: true
-icon: mdi:gauge
-color_type: icon
-color: |
-  [[[
-    if (entity.state >= 4) return 'green';
-    if (entity.state >= 2.5) return 'orange';
-    return 'red';
-  ]]]
-styles:
-  card:
-    - height: 80px
-  name:
-    - font-size: 14px
-  state:
-    - font-size: 16px
-    - font-weight: bold
-tap_action:
-  action: more-info
-
----
-
-# Power Usage Button
-type: custom:button-card
-entity: sensor.power_consumption
-name: Power Usage
-show_state: true
-show_icon: true
-icon: mdi:flash
-color_type: icon
-color: |
-  [[[
-    if (entity.state <= 2000) return 'green';
-    if (entity.state <= 5000) return 'orange';
-    return 'red';
-  ]]]
-styles:
-  card:
-    - height: 80px
-  name:
-    - font-size: 14px
-  state:
-    - font-size: 16px
-    - font-weight: bold
-tap_action:
-  action: more-info
-
-#==============================================================================
-# WEATHER CORRELATION CARD
-#==============================================================================
-
-# Compare outdoor temperature with heat pump performance
-type: history-graph
-title: 🌡️ Weather vs Performance
-hours_to_show: 72
-refresh_interval: 300
-entities:
-  - entity: sensor.outdoor_air_temperature
-    name: Outdoor Temp
-  - entity: sensor.cop
-    name: COP
-    y_axis: secondary
-  - entity: sensor.power_consumption
-    name: Power
-    y_axis: secondary
-
-#==============================================================================
-# CONFIGURATION CARDS
-#==============================================================================
-
-# System Configuration Overview
-type: entities
-title: ⚙️ System Configuration
-show_header_toggle: false
-entities:
-  - entity: number.flow_rate
-    name: Flow Rate
-    icon: mdi:water-pump
-  - entity: sensor.fixed_flow_temp_zone_1
-    name: Current Zone 1 Setpoint
-    icon: mdi:thermometer-water
-  - type: conditional
-    conditions:
-      - entity: sensor.dhw_comfort_set_temperature
-        state_not: unavailable
-    row:
-      entity: sensor.dhw_comfort_set_temperature
-      name: Current DHW Setpoint
-      icon: mdi:water-thermometer
-  - type: divider
-  - entity: switch.heating_weather_compensation_zone_1
-    name: Weather Compensation
-    icon: mdi:weather-partly-cloudy
-
-#==============================================================================
-# USAGE INSTRUCTIONS
-#==============================================================================
-
-# To use these cards:
-# 1. Copy the YAML for cards you want to your Lovelace dashboard
-# 2. Edit in Raw Configuration mode or use the UI editor
-# 3. Replace entity names if yours are different
-# 4. Adjust gauge ranges based on your heat pump specifications
-# 5. Remove conditional cards for features you don't have (e.g., DHW, Zone 2)
-
-# Card customization tips:
-# - Adjust gauge min/max values for your specific heat pump model
-# - Change colors and thresholds based on your preferences  
-# - Group related cards in vertical or horizontal stacks
-# - Use conditional cards to hide features not applicable to your system
-# - Add more-info tap actions for detailed entity information
-
-# Layout suggestions:
-# - Place overview cards at the top of your dashboard
-# - Group control cards together for easy access
-# - Put diagnostic cards in a separate view or at the bottom
-# - Use gauge cards for at-a-glance status checking
-# - Place history graphs in a separate "History" view
-
-# Performance considerations:
-# - Limit history graph hours_to_show for better performance
-# - Use refresh_interval appropriately (don't refresh too often)
-# - Consider using conditional cards to reduce load
-# - Group less important entities in expandable sections
+    background: >-
+      left / contain no-repeat
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed    
+    cards:
+      - type: vertical-stack
+        title: Temperature Controls
+        cards:
+          - type: markdown
+            content: '## Zone 1'
+            style: |
+              ha-card {
+                box-shadow: none;
+                background: none;
+                padding: 8px 0;
+              }
+              h2 {
+                font-size: 18px;
+                font-weight: 500;
+                margin: 0;
+              }
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Fixed Flow Temperature
+                secondary: '{{ states(''sensor.fixed_flow_temperature'') }}°C'
+                icon: mdi:thermometer
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.fixed_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.fixed_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Max Flow Temperature
+                secondary: '{{ states(''sensor.max_flow_temperature'') }}°C'
+                icon: mdi:thermometer-high
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.max_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.max_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Min Flow Temperature
+                secondary: '{{ states(''sensor.min_flow_temperature'') }}°C'
+                icon: mdi:thermometer-low
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.min_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.min_out_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Max Outdoor Temperature
+                secondary: '{{ states(''sensor.max_outdoor_air_temperature'') }}°C'
+                icon: mdi:weather-sunny
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.max_outdoor_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.max_outdoor_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Min Outdoor Temperature
+                secondary: '{{ states(''sensor.min_outdoor_air_temperature'') }}°C'
+                icon: mdi:snowflake
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.min_outdoor_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.min_outdoor_temp
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+      - type: vertical-stack
+        title: Temperature Controls
+        cards:
+          - type: markdown
+            content: '## Zone 2'
+            style: |
+              ha-card {
+                box-shadow: none;
+                background: none;
+                padding: 8px 0;
+              }
+              h2 {
+                font-size: 18px;
+                font-weight: 500;
+                margin: 0;
+              }
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Fixed Flow Temperature
+                secondary: '{{ states(''sensor.fixed_flow_temperature_zone_2'') }}°C'
+                icon: mdi:thermometer
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.fixed_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.fixed_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Max Flow Temperature
+                secondary: '{{ states(''sensor.max_flow_temperature_zone_2'') }}°C'
+                icon: mdi:thermometer-high
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.max_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.max_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Min Flow Temperature
+                secondary: '{{ states(''sensor.min_flow_temperature_zone_2'') }}°C'
+                icon: mdi:thermometer-low
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.min_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.min_out_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Max Outdoor Temperature
+                secondary: '{{ states(''sensor.max_outdoor_air_temperature_zone_2'') }}°C'
+                icon: mdi:weather-sunny
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.max_outdoor_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.max_outdoor_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+          - type: horizontal-stack
+            cards:
+              - type: custom:mushroom-template-card
+                primary: Min Outdoor Temperature
+                secondary: '{{ states(''sensor.min_outdoor_air_temperature_zone_2'') }}°C'
+                icon: mdi:snowflake
+                layout: horizontal
+                fill_container: true
+                tap_action:
+                  action: none
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:minus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.decrement
+                  data: {}
+                  target:
+                    entity_id: input_number.min_outdoor_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+              - type: custom:button-card
+                name: ' '
+                icon: mdi:plus
+                show_name: false
+                tap_action:
+                  action: call-service
+                  service: input_number.increment
+                  data: {}
+                  target:
+                    entity_id: input_number.min_outdoor_temp_zone_2
+                styles:
+                  card:
+                    - width: 40px
+                    - height: 40px
+                  icon:
+                    - width: 24px
+                    - height: 24px
+                      icon:
+                        - width: 24px
+                        - height: 24px
+      - type: horizontal-stack
+        cards:
+          - type: entities
+            title: Frost Protection
+            entities:
+              - entity: switch.frost_protection_on_room_temperature
+                name: Room Temperature Protection
+                icon: mdi:snowflake
+              - entity: switch.frost_protection_by_outdoor_temperature
+                name: Outdoor Temperature Protection
+                icon: mdi:snowflake-variant
+              - entity: switch.frost_protection_based_on_outgoing_water_temperature
+                name: DHW Storage Protection
+                icon: mdi:storage-tank
+      - type: entities
+        title: PCB Terminal Controls
+        entities:
+          - entity: switch.terminal_1_2_3_remote_controller
+            name: 1-2-3 Remote Controller
+            icon: mdi:remote
+          - entity: switch.terminal_7_8_dhw_tank_temperature_probe
+            name: 7-8 DHW Tank Temperature Probe
+            icon: mdi:thermometer-probe
+          - entity: switch.terminal_9_10_outdoor_air_temperature_probe
+            name: 9-10 Outdoor Air Temperature Probe
+            icon: mdi:thermometer-probe
+          - entity: switch.terminal_11_12_buffer_tank_temperature_probe
+            name: 11-12 Buffer Tank Temperature Probe
+            icon: mdi:thermometer-probe
+          - entity: switch.terminal_15_16_32_rs485_mod_bus
+            name: 15-16-32 RS485 Modbus
+            icon: mdi:cable-data
+          - entity: switch.terminal_19_18_dhw_remote_contact
+            name: 18-19 DHW Remote Contact
+            icon: mdi:electric-switch
+          - entity: switch.terminal_22_23_dual_set_point_control
+            name: 22-23 Dual Set Point Control
+            icon: mdi:tune-variant
+          - entity: switch.terminal_28_29_night_mode
+            name: 28-29 Night Mode
+            icon: mdi:weather-night
+          - entity: switch.terminal_30_31_low_tariff_mode
+            name: 30-31 Low Tariff Mode
+            icon: mdi:currency-gbp
+      - type: entities
+        title: ⚙️ System Configuration
+        show_header_toggle: false
+        entities:
+          - entity: number.ashp_flow_rate
+            name: Flow Rate
+            icon: mdi:water-pump
+          - entity: number.ashp_max_flow_temp_zone1
+            name: Zone 1 Max Flow temp
+            icon: mdi:thermometer-water
+          - type: conditional
+            conditions:
+              - entity: sensor.ashp_dhw_comfort_set_temperature
+                state_not: unavailable
+            row:
+              entity: sensor.ashp_dhw_comfort_set_temperature
+              name: Current DHW Setpoint
+              icon: mdi:water-thermometer
+          - type: divider
+          - entity: binary_sensor.ashp_weather_compensation_active
+            name: Heating Weather Compensation Zone 1
+            icon: mdi:weather-partly-cloudy
+          - entity: binary_sensor.ashp_weather_compensation_active_zone2
+      - type: conditional
+        conditions:
+          - condition: state
+            entity: sensor.ashp_dhw_tank_temperature
+            state_not: unavailable
+        card:
+          type: entities
+          title: 🚿 Hot Water Controls
+          show_header_toggle: false
+          entities:
+            - entity: sensor.ashp_dhw_tank_temperature
+              name: Tank Temperature
+              icon: mdi:water-thermometer
+            - entity: number.ashp_dhw_comfort_set_temperature
+              name: Comfort Temperature
+              icon: mdi:thermometer-water
+            - entity: number.ashp_dhw_economy_set_temperature
+              name: Economy Temperature
+              icon: mdi:thermometer-water
+            - entity: number.ashp_dhw_set_point_hysteresis
+            - entity: number.ashp_anti_legionella_set_point
+              name: Legionella Temperature
+              icon: mdi:thermometer-high
+            - entity: switch.anti_legionella_function_2
+              name: Anti-Legionella
+              icon: mdi:shield-check
+      - type: entities
+        title: 🔧 Diagnostic Information
+        show_header_toggle: false
+        state_color: true
+        entities:
+          - entity: sensor.dhw_mode
+            name: System Running
+            icon: mdi:power
+          - entity: binary_sensor.ashp_alarm_status
+            name: Error Status
+            icon: mdi:alert-circle
+          - entity: sensor.compressor_operating_frequency
+            name: Compressor Load
+            icon: mdi:gauge
+          - entity: binary_sensor.ashp_defrost_active
+            name: Defrost Active
+            icon: mdi:snowflake-melt
+  - title: Diagnostics
+    path: diagnostics
+    icon: mdi:wrench
+    background: >-
+      left / contain no-repeat
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed    
+    cards:
+      - type: custom:auto-entities
+        card:
+          type: entities
+          title: ASHP Entities
+          state_color: true
+        filter:
+          include:
+            - options: {}
+              integration: 01JZNFS7GTZQXE88P9TN3HS6QH
+          exclude: []
