@@ -208,6 +208,34 @@ INPUT_REGISTER_MAP = {
         "offset": 0,
         "description": "Room air set temperature of Zone2(Slave)"
     },
+  
+    13: {
+        "name": "Selected DHW Operating Mode",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Selected DHW operating mode (0=disable, 1=Comfort, 2=Economy, 3=Force)"
+    },
+    14: {
+        "name": "Legionella Cycle Day",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Legionella Cycle Day (0=Monday, 1=Tuesday, 2=Wednesday, 3=Thursday, 4=Friday, 5=Saturday, 6=Sunday)"
+    },
+    15: {
+        "name": "Legionella Cycle",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Legionella Cycle (0=Not Running, 1=Running"
+    },
     16: {
         "name": "DHW Tank Temperature",
         "unit": UnitOfTemperature.CELSIUS,
