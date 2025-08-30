@@ -52,13 +52,14 @@ async def async_setup_entry(
 
     # Add calculated sensors with ashp_ prefix
     entities.extend([
-        GrantAerona3PowerSensor(coordinator, config_entry),
-        GrantAerona3EnergySensor(coordinator, config_entry),
-        GrantAerona3COPSensor(coordinator, config_entry),
-        GrantAerona3EfficiencySensor(coordinator, config_entry),
-        GrantAerona3WeatherCompSensor(coordinator, config_entry),
-        GrantAerona3DailyCostSensor(coordinator, config_entry),
-        GrantAerona3MonthlyCostSensor(coordinator, config_entry),
+    GrantAerona3PowerSensor(coordinator, config_entry),
+    GrantAerona3EnergySensor(coordinator, config_entry),
+    GrantAerona3COPSensor(coordinator, config_entry),
+    GrantAerona3DeltaTSensor(coordinator, config_entry),
+    GrantAerona3EfficiencySensor(coordinator, config_entry),
+    GrantAerona3WeatherCompSensor(coordinator, config_entry),
+    GrantAerona3DailyCostSensor(coordinator, config_entry),
+    GrantAerona3MonthlyCostSensor(coordinator, config_entry),
     ])
 
     _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
@@ -341,6 +342,51 @@ class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
             "note": "Use utility_meter integration with power sensor for accurate daily tracking"
         }
 
+class GrantAerona3DeltaTSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 Delta T sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Delta T"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_delta_t"
+        self.entity_id = "sensor.ashp_delta_t"
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_icon = "mdi:thermometer-lines"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Calculate Delta T (flow temp - return temp)."""
+        if not self.coordinator.data:
+            return None
+    
+        input_regs = self.coordinator.data.get("input_registers", {})
+        flow_temp = input_regs.get(9)  # Register 9: Flow temperature
+        return_temp = input_regs.get(0)  # Register 0: Return temperature
+    
+        if flow_temp is not None and return_temp is not None:
+            flow_temp_c = flow_temp * 10
+            return_temp_c = return_temp * 10
+            return round(flow_temp_c - return_temp_c, 2)
+        return None
+    
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        input_regs = self.coordinator.data.get("input_registers", {}) if self.coordinator.data else {}
+        return {
+            "flow_temperature": input_regs.get(9, 0) * 10 if input_regs.get(9) else None,
+            "return_temperature": input_regs.get(0, 0) * 10 if input_regs.get(0) else None,
+            "raw_values": {
+                "flow_reg": input_regs.get(9),
+                "return_reg": input_regs.get(0),
+            }
+        }
+
 class GrantAerona3COPSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 Coefficient of Performance sensor with ashp_ prefix."""
 
@@ -349,7 +395,6 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
         coordinator: GrantAerona3Coordinator,
         config_entry: ConfigEntry,
     ) -> None:
-        """Initialize the COP sensor with ashp_ prefix."""
         super().__init__(coordinator, config_entry)
         self._attr_name = "ASHP Coefficient of Performance"
         self._attr_unique_id = f"ashp_{config_entry.entry_id}_coefficient_of_performance"
@@ -363,35 +408,54 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
         """Calculate COP from available data."""
         if not self.coordinator.data:
             return None
-        
+    
         input_regs = self.coordinator.data.get("input_registers", {})
-        
-        # Get temperatures for COP calculation
-        flow_temp = input_regs.get(1)
-        flow_temp = flow_temp * 0.1 if flow_temp is not None else None
-        return_temp = input_regs.get(0, 0) * 0.1 if input_regs.get(0) else None  # Adjust register/scale
-        value = input_regs.get(2)
-        value = value * 0.1 if value is not None else None
-        
-        if flow_temp and return_temp and value:
-            # Simplified COP calculation based on temperatures
-            temp_lift = flow_temp - value
-            if temp_lift > 0:
-                # Basic COP estimation - adjust formula as needed
-                cop = 6.8 - (temp_lift * 0.1)
-                return round(max(cop, 1.0), 2)
-        
+        flow_temp = input_regs.get(9)  # Register 9: Flow temperature
+        return_temp = input_regs.get(0)  # Register 0: Return temperature
+        power_raw = input_regs.get(3)  # Register 3: Power consumption
+    
+        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 30.0)
+    
+        if (
+            flow_temp is not None
+            and return_temp is not None
+            and power_raw is not None
+            and flow_rate is not None
+            and power_raw > 0
+        ):
+            # Apply correct scaling factors
+            flow_temp_c = flow_temp * 10  # Temperature scaling
+            return_temp_c = return_temp * 10  # Temperature scaling
+            power_watts = power_raw * 100  # Power scaling (100W per unit)
+            
+            delta_t = flow_temp_c - return_temp_c
+            
+            if delta_t > 0:  # Only calculate if we have positive delta T
+                # Calculate thermal output in kW
+                # Formula: thermal_output = flow_rate(L/min) * specific_heat(4.186 kJ/kg°C) * delta_T(°C) / 60(s) / 1000(kW conversion)
+                thermal_output_kw = (flow_rate * 4.186 * delta_t) / 60 / 1000
+                electrical_input_kw = power_watts / 1000
+                
+                if electrical_input_kw > 0:
+                    cop = thermal_output_kw / electrical_input_kw
+                    return round(cop, 2)
         return None
-
+    
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
         input_regs = self.coordinator.data.get("input_registers", {}) if self.coordinator.data else {}
+        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 30.0)
         return {
-            "calculation_method": "temperature_based_estimation",
-            "flow_temperature": input_regs.get(1, 0) * 0.1 if input_regs.get(1) else None,
-            "return_temperature": input_regs.get(0, 0) * 0.1 if input_regs.get(0) else None,
-            "outdoor_temperature": input_regs.get(2, 0) * 0.1 if input_regs.get(2) else None,
+            "calculation_method": "full_physics",
+            "flow_temperature": input_regs.get(9, 0) * 10 if input_regs.get(9) else None,
+            "return_temperature": input_regs.get(0, 0) * 10 if input_regs.get(0) else None,
+            "power": input_regs.get(3, 0) * 100,
+            "flow_rate": flow_rate,
+            "raw_values": {
+                "flow_reg": input_regs.get(9),
+                "return_reg": input_regs.get(0), 
+                "power_reg": input_regs.get(3)
+            }
         }
 
 class GrantAerona3EfficiencySensor(GrantAerona3BaseSensor):
@@ -490,10 +554,11 @@ class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
         input_regs = self.coordinator.data.get("input_registers", {})
         
         # Estimate from current power consumption
-        power = input_regs.get(5, 0)  # Adjust register
-        if power > 0:
+        power_raw = input_regs.get(3, 0)  # Register 3
+        if power_raw > 0:
+            power_watts = power_raw * 100  # Apply scaling
             # Estimate daily consumption and cost
-            daily_kwh = (power / 1000) * 24  # Very rough estimate
+            daily_kwh = (power_watts / 1000) * 24  # Very rough estimate
             uk_rate = 0.30  # £0.30 per kWh typical rate
             return round(daily_kwh * uk_rate, 2)
         
@@ -533,10 +598,11 @@ class GrantAerona3MonthlyCostSensor(GrantAerona3BaseSensor):
         # Basic monthly projection
         input_regs = self.coordinator.data.get("input_registers", {})
         
-        power = input_regs.get(5, 0)  # Adjust register
-        if power > 0:
+        power_raw = input_regs.get(3, 0)  # Register 3
+        if power_raw > 0:
+            power_watts = power_raw * 100  # Apply scaling
             # Estimate monthly consumption and cost
-            monthly_kwh = (power / 1000) * 24 * 30  # Very rough estimate
+            monthly_kwh = (power_watts / 1000) * 24 * 30  # Very rough estimate
             uk_rate = 0.30  # £0.30 per kWh typical rate
             return round(monthly_kwh * uk_rate, 2)
         
