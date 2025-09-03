@@ -10,9 +10,10 @@ from pymodbus.exceptions import ModbusException
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import config_validation as cv
 
 from .const import (
     DOMAIN,
@@ -25,14 +26,14 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.1.0"
+INTEGRATION_VERSION = "1.1.1"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST): str,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
-        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
+        vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): vol.All(vol.Coerce(int), vol.Range(min=1, max=247)),
+        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
     }
 )
 
@@ -48,23 +49,21 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     # Test the connection
     client = ModbusTcpClient(host=host, port=port, timeout=5)
-    
+
     try:
         if not await hass.async_add_executor_job(client.connect):
             raise CannotConnect("Failed to connect to heat pump")
-        
+
         # Try to read a register to verify communication
         result = await hass.async_add_executor_job(
             lambda: client.read_input_registers(address=0, count=1, slave=slave_id)
         )
 
-
-        
         if result.isError():
             raise CannotConnect("Failed to read from heat pump - check Slave ID")
-        
+
         _LOGGER.info("Successfully connected to Grant Aerona3 at %s:%s", host, port)
-        
+
     except ModbusException as err:
         _LOGGER.error("Modbus error connecting to %s:%s - %s", host, port, err)
         raise CannotConnect(f"Modbus communication error: {err}") from err
@@ -72,7 +71,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         _LOGGER.error("Unexpected error connecting to %s:%s - %s", host, port, err)
         raise CannotConnect(f"Unexpected error: {err}") from err
     finally:
-        client.close()
+        await hass.async_add_executor_job(client.close)
 
     # Return info that you want to store in the config entry.
     return {
@@ -88,6 +87,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Grant Aerona3 Heat Pump."""
 
     VERSION = 1  # Home Assistant expects an integer here
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return OptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -119,6 +124,43 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "version": INTEGRATION_VERSION,
                 "features": "All entities will have 'ashp_' prefixes for better organisation"
             }
+        )
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle Grant Aerona3 options flow."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL,
+                        default=self.config_entry.options.get(
+                            CONF_SCAN_INTERVAL,
+                            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                        ),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
+                    vol.Optional(
+                        "flow_rate_lpm",
+                        default=self.config_entry.options.get(
+                            "flow_rate_lpm",
+                            self.config_entry.data.get("flow_rate_lpm", 30.0)
+                        ),
+                    ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
+                }
+            ),
         )
 
 

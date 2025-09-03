@@ -33,7 +33,11 @@
         "description": "Configure advanced options for your ASHP integration",
         "data": {
           "scan_interval": "Scan Interval (seconds)",
-          "enable_diagnostics": "Enable diagnostic entities"
+          "flow_rate_lpm": "Flow Rate (L/min)"
+        },
+        "data_description": {
+          "scan_interval": "How often to poll the heat pump for data updates (5-3600 seconds)",
+          "flow_rate_lpm": "Water flow rate through the system for COP calculations (1-100 L/min)"
         }
       }
     }

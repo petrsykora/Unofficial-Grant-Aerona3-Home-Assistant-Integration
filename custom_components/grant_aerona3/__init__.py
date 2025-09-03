@@ -1,4 +1,4 @@
-"""Grant Aerona3 Heat Pump integration for Home Assistant with ASHP prefixes."""
+"""Grant Aerona3 Heat Pump integration for Home Assistant."""
 from __future__ import annotations
 
 import logging
@@ -40,8 +40,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Set up all platforms
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         
+        # Set up options update listener
+        entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+        
         _LOGGER.info(
-            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.0 with ashp_ prefixes)",
+            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.1 with ashp_ prefixes)",
             entry.data["host"]
         )
         
