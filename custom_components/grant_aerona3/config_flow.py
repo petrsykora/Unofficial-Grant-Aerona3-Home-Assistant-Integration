@@ -56,7 +56,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
         # Try to read a register to verify communication
         result = await hass.async_add_executor_job(
-            lambda: client.read_input_registers(address=0, count=1, slave=slave_id)
+            lambda: client.read_input_registers(address=0, count=1, device_id=slave_id)
         )
 
         if result.isError():

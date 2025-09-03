@@ -127,7 +127,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 try:
                     result = await asyncio.wait_for(
                         self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_input_registers(reg, count=1, slave=self.slave_id)
+                            lambda reg=reg_id: client.read_input_registers(reg, count=1, device_id=self.slave_id)
                         ),
                         timeout=3.0
                     )
@@ -149,7 +149,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 try:
                     result = await asyncio.wait_for(
                         self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_input_registers(reg, count=1, slave=self.slave_id)
+                            lambda reg=reg_id: client.read_input_registers(reg, count=1, device_id=self.slave_id)
                         ),
                         timeout=2.0
                     )
@@ -181,7 +181,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 try:
                     result = await asyncio.wait_for(
                         self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_holding_registers(reg, count=1, slave=self.slave_id)
+                            lambda reg=reg_id: client.read_holding_registers(reg, count=1, device_id=self.slave_id)
                         ),
                         timeout=2.0
                     )
@@ -214,9 +214,9 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 try:
                     result = await asyncio.wait_for(
                         self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_coils(reg, count=1, slave=self.slave_id)
+                            lambda reg=reg_id: client.read_coils(reg, count=1, device_id=self.slave_id)
                         ),
-                        timeout=3.0
+                        timeout=2.0
                     )
                     if not result.isError():
                         coil_data[reg_id] = result.bits[0]
@@ -270,7 +270,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             
             result = await asyncio.wait_for(
                 self.hass.async_add_executor_job(
-                    lambda: client.write_register(register, value, slave=self.slave_id)
+                    lambda: client.write_register(register, value, device_id=self.slave_id)
                 ),
                 timeout=5.0
             )
@@ -300,7 +300,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return False
             
             result = await self.hass.async_add_executor_job(
-                lambda: self._client.write_coil(address, value, slave=self.slave_id)
+                lambda: self._client.write_coil(address, value, device_id=self.slave_id)
             )
             
             if result.isError():
