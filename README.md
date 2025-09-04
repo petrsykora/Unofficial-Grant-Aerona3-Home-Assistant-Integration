@@ -31,7 +31,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - ✅ **Code Quality**: Modern Python type hints and improved documentation
 - ✅ **Weather Compensation**: Advanced adaptive weather compensation features
 - ✅ **Energy Monitoring**: Enhanced COP calculations and energy tracking
-
+- ✅ **Modbus Scanner**: Modbus Scanner Tool to find new Registers
 ## 🚀 Quick Start
 
 1. **Install** the integration (see [Installation Guide](Docs/installation_guide.md))
