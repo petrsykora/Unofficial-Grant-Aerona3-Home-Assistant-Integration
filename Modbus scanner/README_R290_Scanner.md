@@ -37,7 +37,7 @@ A comprehensive Python tool for discovering and monitoring Modbus registers on G
 ## 🎯 Usage
 
 ### Basic Scan
-Scan your heat pump with default settings:
+Scan your heat pump with default settings (change the IP to address t the IP address of your ASHP):
 ```bash
 python3 R290_modbus.py 192.168.1.100
 ```
