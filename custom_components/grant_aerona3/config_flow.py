@@ -17,10 +17,10 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     DOMAIN,
-    CONF_SLAVE_ID,
+    CONF_UNIT_ID,
     CONF_SCAN_INTERVAL,
     DEFAULT_PORT,
-    DEFAULT_SLAVE_ID,
+    DEFAULT_UNIT_ID,
     DEFAULT_SCAN_INTERVAL,
 )
 
@@ -32,7 +32,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): cv.string,
         vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
-        vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): vol.All(vol.Coerce(int), vol.Range(min=1, max=247)),
+        vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): vol.All(vol.Coerce(int), vol.Range(min=1, max=247)),
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
     }
 )
@@ -45,7 +45,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     """
     host = data[CONF_HOST]
     port = data[CONF_PORT]
-    slave_id = data[CONF_SLAVE_ID]
+    unit_id = data[CONF_UNIT_ID]
 
     # Test the connection
     client = ModbusTcpClient(host=host, port=port, timeout=5)
@@ -56,11 +56,11 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
         # Try to read a register to verify communication
         result = await hass.async_add_executor_job(
-            lambda: client.read_input_registers(address=0, count=1, device_id=slave_id)
+            lambda: client.read_input_registers(address=0, count=1, unit=unit_id)
         )
 
         if result.isError():
-            raise CannotConnect("Failed to read from heat pump - check Slave ID")
+            raise CannotConnect("Failed to read from heat pump - check Unit ID")
 
         _LOGGER.info("Successfully connected to Grant Aerona3 at %s:%s", host, port)
 
@@ -78,7 +78,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         "title": f"ASHP Grant Aerona3 ({host})",
         "host": host,
         "port": port,
-        "slave_id": slave_id,
+        "unit_id": unit_id,
         "scan_interval": data[CONF_SCAN_INTERVAL],
     }
 

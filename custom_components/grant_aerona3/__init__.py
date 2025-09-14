@@ -43,9 +43,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Set up options update listener
         entry.async_on_unload(entry.add_update_listener(async_reload_entry))
         
+        host = entry.data.get("host")
+        unit_id = entry.data.get("unit_id", entry.data.get("slave_id"))  # fallback for old configs
+
         _LOGGER.info(
             "Grant Aerona3 ASHP integration setup completed for %s (v1.1.1 with ashp_ prefixes)",
-            entry.data["host"]
+            host
         )
         
         # Log entity count for debugging
@@ -54,7 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             len(coordinator.data.get("holding_registers", {}) or {}) +
             7
         )
-        _LOGGER.info("Created %d ASHP entities with ashp_ prefixes", entity_count)
+        _LOGGER.info("Created %d ASHP entities with ashp_ prefixes (unit_id: %s)", entity_count, unit_id)
         
         return True
         
