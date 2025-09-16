@@ -370,8 +370,8 @@ class GrantAerona3DeltaTSensor(GrantAerona3BaseSensor):
         return_temp = input_regs.get(0)  # Register 0: Return temperature
     
         if flow_temp is not None and return_temp is not None:
-            flow_temp_c = flow_temp * 10
-            return_temp_c = return_temp * 10
+            flow_temp_c = flow_temp 
+            return_temp_c = return_temp 
             return round(flow_temp_c - return_temp_c, 2)
         return None
     
