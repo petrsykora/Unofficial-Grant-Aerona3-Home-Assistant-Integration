@@ -433,7 +433,7 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
             if delta_t > 0:  # Only calculate if we have positive delta T
                 # Calculate thermal output in kW
                 # Formula: thermal_output = flow_rate(L/min) * specific_heat(4.186 kJ/kg°C) * delta_T(°C) / 60(s) / 1000(kW conversion)
-                thermal_output_kw = (flow_rate * 4.186 * delta_t) / 60 / 1000
+                thermal_output_kw = (flow_rate * 4.186 * delta_t) / 60
                 electrical_input_kw = power_watts / 1000
                 
                 if electrical_input_kw > 0:
