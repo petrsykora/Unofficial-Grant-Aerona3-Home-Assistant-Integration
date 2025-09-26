@@ -379,8 +379,8 @@ class GrantAerona3DeltaTSensor(GrantAerona3BaseSensor):
     def extra_state_attributes(self) -> Dict[str, Any]:
         input_regs = self.coordinator.data.get("input_registers", {}) if self.coordinator.data else {}
         return {
-            "flow_temperature": input_regs.get(9, 0) * 10 if input_regs.get(9) else None,
-            "return_temperature": input_regs.get(0, 0) * 10 if input_regs.get(0) else None,
+            "flow_temperature": input_regs.get(9, 0) if input_regs.get(9) else None,
+            "return_temperature": input_regs.get(0, 0) if input_regs.get(0) else None,
             "raw_values": {
                 "flow_reg": input_regs.get(9),
                 "return_reg": input_regs.get(0),
@@ -414,7 +414,7 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
         return_temp = input_regs.get(0)  # Register 0: Return temperature
         power_raw = input_regs.get(3)  # Register 3: Power consumption
     
-        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 30.0)
+        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 28.0)
     
         if (
             flow_temp is not None
@@ -424,8 +424,8 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
             and power_raw > 0
         ):
             # Apply correct scaling factors
-            flow_temp_c = flow_temp * 10  # Temperature scaling
-            return_temp_c = return_temp * 10  # Temperature scaling
+            flow_temp_c = flow_temp  # Temperature scaling
+            return_temp_c = return_temp  # Temperature scaling
             power_watts = power_raw * 100  # Power scaling (100W per unit)
             
             delta_t = flow_temp_c - return_temp_c
@@ -444,11 +444,11 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         input_regs = self.coordinator.data.get("input_registers", {}) if self.coordinator.data else {}
-        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 30.0)
+        flow_rate = getattr(self.coordinator, 'flow_rate_lpm', 28.0)
         return {
             "calculation_method": "full_physics",
-            "flow_temperature": input_regs.get(9, 0) * 10 if input_regs.get(9) else None,
-            "return_temperature": input_regs.get(0, 0) * 10 if input_regs.get(0) else None,
+            "flow_temperature": input_regs.get(9, 0)  if input_regs.get(9) else None,
+            "return_temperature": input_regs.get(0, 0) if input_regs.get(0) else None,
             "power": input_regs.get(3, 0) * 100,
             "flow_rate": flow_rate,
             "raw_values": {
