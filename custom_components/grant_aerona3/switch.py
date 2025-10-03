@@ -50,6 +50,21 @@ async def async_setup_entry(
         GrantAerona3FrostProtectionOutdoorSwitch(coordinator, config_entry),
         GrantAerona3FrostProtectionWaterSwitch(coordinator, config_entry),
         GrantAerona3HumidityCompensationSwitch(coordinator, config_entry),
+        # Terminal enable switches
+        GrantAerona3RemoteControllerSwitch(coordinator, config_entry),
+        GrantAerona3MixingValveSwitch(coordinator, config_entry),
+        GrantAerona3DHWTankProbeSwitch(coordinator, config_entry),
+        GrantAerona3OutdoorProbeSwitch(coordinator, config_entry),
+        GrantAerona3BufferTankProbeSwitch(coordinator, config_entry),
+        GrantAerona3MixWaterProbeSwitch(coordinator, config_entry),
+        GrantAerona3RS485ModbusSwitch(coordinator, config_entry),
+        GrantAerona3HumiditySensorSwitch(coordinator, config_entry),
+        GrantAerona3DHWRemoteContactSwitch(coordinator, config_entry),
+        GrantAerona3DualSetPointSwitch(coordinator, config_entry),
+        GrantAerona3FlowSwitchSwitch(coordinator, config_entry),
+        GrantAerona3NightModeSwitch(coordinator, config_entry),
+        GrantAerona3LowTariffSwitch(coordinator, config_entry),
+        GrantAerona3EHSTerminalSwitch(coordinator, config_entry),
     ])
 
     _LOGGER.info("Creating %d ASHP switch entities", len(entities))
@@ -808,3 +823,511 @@ class GrantAerona3HumidityCompensationSwitch(GrantAerona3BaseSwitch):
             "description": "Adjusts water temperature based on room humidity",
             "related_settings": "See Holding Registers 60-62 for humidity values",
         }
+    
+
+class GrantAerona3RemoteControllerSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 1-2-3 Remote Controller (Coil 16)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Remote Controller Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_remote_controller"
+        self.entity_id = "switch.ashp_remote_controller_enable"
+        self._attr_icon = "mdi:remote"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 16
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return True  # Default enabled per documentation
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, True)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable Remote Controller on terminals 1-2-3",
+            "default_state": "Enabled (required for normal operation)",
+        }
+
+
+class GrantAerona3MixingValveSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 4-5-6 3-way mixing valve (Coil 17)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP 3-Way Mixing Valve Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_mixing_valve"
+        self.entity_id = "switch.ashp_mixing_valve_enable"
+        self._attr_icon = "mdi:valve"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 17
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable 3-way mixing valve on terminals 4-5-6",
+            "pcb_terminals": "4, 5, 6",
+        }
+
+
+class GrantAerona3DHWTankProbeSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 7-8 DHW tank temperature probe (Coil 18)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP DHW Tank Probe Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_dhw_tank_probe"
+        self.entity_id = "switch.ashp_dhw_tank_probe_enable"
+        self._attr_icon = "mdi:thermometer"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 18
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable DHW tank temperature probe on terminals 7-8",
+            "pcb_terminals": "7, 8",
+        }
+
+
+class GrantAerona3OutdoorProbeSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 9-10 Outdoor air temperature probe (Coil 19)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Outdoor Probe Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_outdoor_probe"
+        self.entity_id = "switch.ashp_outdoor_probe_enable"
+        self._attr_icon = "mdi:thermometer"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 19
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable outdoor temperature probe (additional) on terminals 9-10",
+            "pcb_terminals": "9, 10",
+        }
+
+
+class GrantAerona3BufferTankProbeSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 11-12 Buffer tank temperature probe (Coil 20)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Buffer Tank Probe Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_buffer_tank_probe"
+        self.entity_id = "switch.ashp_buffer_tank_probe_enable"
+        self._attr_icon = "mdi:thermometer"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 20
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable buffer tank temperature probe on terminals 11-12",
+            "pcb_terminals": "11, 12",
+            "note": "Related to Holding Register 41 (Main water pump configuration)",
+        }
+
+
+class GrantAerona3MixWaterProbeSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 13-14 Mix water temperature probe (Coil 21)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Mix Water Probe Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_mix_water_probe"
+        self.entity_id = "switch.ashp_mix_water_probe_enable"
+        self._attr_icon = "mdi:thermometer"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 21
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable mix water temperature probe on terminals 13-14",
+            "pcb_terminals": "13, 14",
+        }
+
+
+class GrantAerona3RS485ModbusSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 15-16-32 RS485 Modbus (Coil 22)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP RS485 Modbus Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_rs485_modbus"
+        self.entity_id = "switch.ashp_rs485_modbus_enable"
+        self._attr_icon = "mdi:serial-port"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 22
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable RS485 Modbus communication on terminals 15-16-32",
+            "pcb_terminals": "15, 16, 32",
+            "warning": "This integration uses RS485 - keep this enabled",
+        }
+
+
+class GrantAerona3HumiditySensorSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 17-18 Humidity sensor (Coil 23)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Humidity Sensor Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_humidity_sensor"
+        self.entity_id = "switch.ashp_humidity_sensor_enable"
+        self._attr_icon = "mdi:water-percent"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 23
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable humidity sensor on terminals 17-18",
+            "pcb_terminals": "17, 18",
+        }
+
+
+class GrantAerona3DHWRemoteContactSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 19-18 DHW remote contact (Coil 24)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP DHW Remote Contact Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_dhw_remote_contact"
+        self.entity_id = "switch.ashp_dhw_remote_contact_enable"
+        self._attr_icon = "mdi:water-boiler-alert"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 24
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable DHW remote contact on terminals 19-18",
+            "pcb_terminals": "19, 18",
+        }
+
+
+class GrantAerona3DualSetPointSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 22-23 Dual set point control (Coil 25)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Dual Set Point Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_dual_set_point"
+        self.entity_id = "switch.ashp_dual_set_point_enable"
+        self._attr_icon = "mdi:thermometer-lines"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 25
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable dual set point control on terminals 22-23",
+            "pcb_terminals": "22, 23",
+        }
+
+
+class GrantAerona3FlowSwitchSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 26-27 Flow switch (Coil 26)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Flow Switch Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_flow_switch"
+        self.entity_id = "switch.ashp_flow_switch_enable"
+        self._attr_icon = "mdi:pipe-valve"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 26
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return True  # Default enabled per documentation
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, True)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable flow switch on terminals 26-27",
+            "pcb_terminals": "26, 27",
+        }
+
+
+class GrantAerona3NightModeSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 28-29 Night mode (Coil 27)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Night Mode Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_night_mode"
+        self.entity_id = "switch.ashp_night_mode_enable"
+        self._attr_icon = "mdi:weather-night"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 27
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable night mode terminal input on terminals 28-29",
+            "pcb_terminals": "28, 29",
+            "note": "Limits compressor frequency - see Holding Register 37",
+        }
+
+
+class GrantAerona3LowTariffSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 30-31 Low tariff (Coil 28)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Low Tariff Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_low_tariff"
+        self.entity_id = "switch.ashp_low_tariff_enable"
+        self._attr_icon = "mdi:currency-usd-off"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 28
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable low tariff terminal input on terminals 30-31",
+            "pcb_terminals": "30, 31",
+            "note": "Boosts temperatures when external signal active - see Holding Registers 24-25",
+        }
+
+
+class GrantAerona3EHSTerminalSwitch(GrantAerona3BaseSwitch):
+    """Switch for Terminal 41-42 EHS (Coil 29)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP EHS Terminal Enable"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_ehs_terminal"
+        self.entity_id = "switch.ashp_ehs_terminal_enable"
+        self._attr_icon = "mdi:heat-wave"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 29
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Enable EHS (External Heat Source) on terminals 41-42",
+            "pcb_terminals": "41, 42",
+        }   
