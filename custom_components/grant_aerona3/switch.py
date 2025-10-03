@@ -27,7 +27,7 @@ async def async_setup_entry(
 
     entities = []
 
-    # Add switch entities for controllable functions based on actual registers
+    # Holding Register switches (configuration parameters)
     entities.extend([
         GrantAerona3DHWPrioritySwitch(coordinator, config_entry),
         GrantAerona3DHWConfigurationSwitch(coordinator, config_entry),
@@ -40,6 +40,16 @@ async def async_setup_entry(
         GrantAerona3Terminal48Pump1Switch(coordinator, config_entry),
         GrantAerona3Terminal49Pump2Switch(coordinator, config_entry),
         GrantAerona3Terminal3WayValveSwitch(coordinator, config_entry),
+    ])
+
+    # Coil Register switches (enable/disable features)
+    entities.extend([
+        GrantAerona3ClimateCompensationZone1Switch(coordinator, config_entry),
+        GrantAerona3AntiLegionellaSwitch(coordinator, config_entry),
+        GrantAerona3WaterSetpointControlSwitch(coordinator, config_entry),
+        GrantAerona3FrostProtectionOutdoorSwitch(coordinator, config_entry),
+        GrantAerona3FrostProtectionWaterSwitch(coordinator, config_entry),
+        GrantAerona3HumidityCompensationSwitch(coordinator, config_entry),
     ])
 
     _LOGGER.info("Creating %d ASHP switch entities", len(entities))
@@ -55,7 +65,7 @@ class GrantAerona3BaseSwitch(CoordinatorEntity, SwitchEntity):
         config_entry: ConfigEntry,
     ) -> None:
         """Initialize the switch entity."""
-        super().__init__(coordinator, config_entry)
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
@@ -72,31 +82,55 @@ class GrantAerona3BaseSwitch(CoordinatorEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
-        if hasattr(self, '_register_id') and hasattr(self, '_on_value'):
+        if not hasattr(self, '_register_id'):
+            _LOGGER.error("Switch %s has no register ID defined", self._attr_name)
+            return
+
+        # Check if this is a coil or holding register
+        if hasattr(self, '_register_type') and self._register_type == "coil":
+            success = await self.coordinator.async_write_coil(
+                self._register_id, self._on_value
+            )
+        else:
             success = await self.coordinator.async_write_register(
                 self._register_id, self._on_value
             )
-            
-            if success:
-                _LOGGER.info("Successfully turned on %s", self._attr_name)
-            else:
-                _LOGGER.error("Failed to turn on %s", self._attr_name)
+        
+        if success:
+            _LOGGER.info("Successfully turned on %s", self._attr_name)
+            await self.coordinator.async_request_refresh()
+        else:
+            _LOGGER.error("Failed to turn on %s", self._attr_name)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
-        if hasattr(self, '_register_id') and hasattr(self, '_off_value'):
+        if not hasattr(self, '_register_id'):
+            _LOGGER.error("Switch %s has no register ID defined", self._attr_name)
+            return
+
+        # Check if this is a coil or holding register
+        if hasattr(self, '_register_type') and self._register_type == "coil":
+            success = await self.coordinator.async_write_coil(
+                self._register_id, self._off_value
+            )
+        else:
             success = await self.coordinator.async_write_register(
                 self._register_id, self._off_value
             )
-            
-            if success:
-                _LOGGER.info("Successfully turned off %s", self._attr_name)
-            else:
-                _LOGGER.error("Failed to turn off %s", self._attr_name)
+        
+        if success:
+            _LOGGER.info("Successfully turned off %s", self._attr_name)
+            await self.coordinator.async_request_refresh()
+        else:
+            _LOGGER.error("Failed to turn off %s", self._attr_name)
 
+
+# ============================================================================
+# HOLDING REGISTER SWITCHES
+# ============================================================================
 
 class GrantAerona3DHWPrioritySwitch(GrantAerona3BaseSwitch):
-    """Switch for DHW priority setting (Register 26)."""
+    """Switch for DHW priority setting (Holding Register 26)."""
 
     def __init__(
         self,
@@ -111,7 +145,6 @@ class GrantAerona3DHWPrioritySwitch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:water-boiler"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 26: DHW production priority setting
         self._register_id = 26
         self._on_value = 1   # DHW priority over space heating
         self._off_value = 0  # DHW unavailable
@@ -125,7 +158,7 @@ class GrantAerona3DHWPrioritySwitch(GrantAerona3BaseSwitch):
         holding_regs = self.coordinator.data.get("holding_registers", {})
         mode = holding_regs.get(self._register_id, 0)
         
-        return mode > 0  # Any value > 0 means DHW is available
+        return mode > 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -149,7 +182,7 @@ class GrantAerona3DHWPrioritySwitch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3DHWConfigurationSwitch(GrantAerona3BaseSwitch):
-    """Switch for DHW configuration type (Register 27)."""
+    """Switch for DHW configuration type (Holding Register 27)."""
 
     def __init__(
         self,
@@ -164,7 +197,6 @@ class GrantAerona3DHWConfigurationSwitch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:heat-pump"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 27: Type of configuration to heat the DHW
         self._register_id = 27
         self._on_value = 1   # Heat pump only
         self._off_value = 0  # Heat pump + Heater
@@ -178,7 +210,7 @@ class GrantAerona3DHWConfigurationSwitch(GrantAerona3BaseSwitch):
         holding_regs = self.coordinator.data.get("holding_registers", {})
         mode = holding_regs.get(self._register_id, 1)
         
-        return mode == 1  # Heat pump only
+        return mode == 1
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -202,7 +234,7 @@ class GrantAerona3DHWConfigurationSwitch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3BackupHeaterSwitch(GrantAerona3BaseSwitch):
-    """Switch for backup heater function (Register 71)."""
+    """Switch for backup heater function (Holding Register 71)."""
 
     def __init__(
         self,
@@ -217,7 +249,6 @@ class GrantAerona3BackupHeaterSwitch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:heating-coil"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 71: Backup heater type of function
         self._register_id = 71
         self._on_value = 1   # Replacement mode
         self._off_value = 0  # Disabled
@@ -231,7 +262,7 @@ class GrantAerona3BackupHeaterSwitch(GrantAerona3BaseSwitch):
         holding_regs = self.coordinator.data.get("holding_registers", {})
         mode = holding_regs.get(self._register_id, 0)
         
-        return mode > 0  # Any mode > 0 means enabled
+        return mode > 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -256,7 +287,7 @@ class GrantAerona3BackupHeaterSwitch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3FrostProtectionSwitch(GrantAerona3BaseSwitch):
-    """Switch for frost protection (Register 81)."""
+    """Switch for freeze protection functions (Holding Register 81)."""
 
     def __init__(
         self,
@@ -265,28 +296,27 @@ class GrantAerona3FrostProtectionSwitch(GrantAerona3BaseSwitch):
     ) -> None:
         """Initialize the frost protection switch."""
         super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Frost Protection"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_frost_protection"
-        self.entity_id = "switch.ashp_frost_protection"
+        self._attr_name = "ASHP Freeze Protection"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_freeze_protection"
+        self.entity_id = "switch.ashp_freeze_protection"
         self._attr_device_class = SwitchDeviceClass.SWITCH
         self._attr_icon = "mdi:snowflake-alert"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 81: Freeze protection functions
         self._register_id = 81
         self._on_value = 1   # Enabled during Start-up
         self._off_value = 0  # Disabled
 
     @property
     def is_on(self) -> bool:
-        """Return true if frost protection is enabled."""
+        """Return true if freeze protection is enabled."""
         if not self.coordinator.data:
             return False
         
         holding_regs = self.coordinator.data.get("holding_registers", {})
         mode = holding_regs.get(self._register_id, 0)
         
-        return mode > 0  # Any value > 0 means enabled
+        return mode > 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -305,13 +335,13 @@ class GrantAerona3FrostProtectionSwitch(GrantAerona3BaseSwitch):
         }
         
         return {
-            "frost_protection_mode": protection_modes.get(mode, "Unknown"),
+            "freeze_protection_mode": protection_modes.get(mode, "Unknown"),
             "register_value": mode,
         }
 
 
 class GrantAerona3EHSFunctionSwitch(GrantAerona3BaseSwitch):
-    """Switch for EHS (External Heat Source) function (Register 84)."""
+    """Switch for EHS (External Heat Source) function (Holding Register 84)."""
 
     def __init__(
         self,
@@ -326,7 +356,6 @@ class GrantAerona3EHSFunctionSwitch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:heat-wave"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 84: EHS type of function
         self._register_id = 84
         self._on_value = 1   # Replacement mode
         self._off_value = 0  # Disabled
@@ -364,7 +393,7 @@ class GrantAerona3EHSFunctionSwitch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal2021Switch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 20-21 remote contact (Register 91)."""
+    """Switch for Terminal 20-21 remote contact (Holding Register 91)."""
 
     def __init__(
         self,
@@ -379,7 +408,6 @@ class GrantAerona3Terminal2021Switch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:electric-switch"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 91: Terminal 20-21
         self._register_id = 91
         self._on_value = 1   # ON/OFF remote contact
         self._off_value = 0  # Disabled
@@ -397,7 +425,7 @@ class GrantAerona3Terminal2021Switch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal2425Switch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 24-25 heating/cooling mode (Register 92)."""
+    """Switch for Terminal 24-25 heating/cooling mode (Holding Register 92)."""
 
     def __init__(
         self,
@@ -412,7 +440,6 @@ class GrantAerona3Terminal2425Switch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:electric-switch"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 92: Terminal 24-25
         self._register_id = 92
         self._on_value = 1   # Cooling CLOSE/Heating OPEN
         self._off_value = 0  # Disabled
@@ -430,7 +457,7 @@ class GrantAerona3Terminal2425Switch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal47AlarmSwitch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 47 alarm output (Register 93)."""
+    """Switch for Terminal 47 alarm output (Holding Register 93)."""
 
     def __init__(
         self,
@@ -445,7 +472,6 @@ class GrantAerona3Terminal47AlarmSwitch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:alarm-light"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 93: Terminal 47
         self._register_id = 93
         self._on_value = 1   # Alarm output
         self._off_value = 0  # Disabled
@@ -463,7 +489,7 @@ class GrantAerona3Terminal47AlarmSwitch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal48Pump1Switch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 48 Pump1 (Register 94)."""
+    """Switch for Terminal 48 Pump1 (Holding Register 94)."""
 
     def __init__(
         self,
@@ -478,7 +504,6 @@ class GrantAerona3Terminal48Pump1Switch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:pump"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 94: Terminal 48 Pump1
         self._register_id = 94
         self._on_value = 1   # Additional water pump1 for Zone1
         self._off_value = 0  # Disabled
@@ -496,7 +521,7 @@ class GrantAerona3Terminal48Pump1Switch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal49Pump2Switch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 49 Pump2 (Register 95)."""
+    """Switch for Terminal 49 Pump2 (Holding Register 95)."""
 
     def __init__(
         self,
@@ -511,7 +536,6 @@ class GrantAerona3Terminal49Pump2Switch(GrantAerona3BaseSwitch):
         self._attr_icon = "mdi:pump"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping - Register 95: Terminal 49 Pump2
         self._register_id = 95
         self._on_value = 1   # Additional water pump2 for Zone2
         self._off_value = 0  # Disabled
@@ -529,7 +553,7 @@ class GrantAerona3Terminal49Pump2Switch(GrantAerona3BaseSwitch):
 
 
 class GrantAerona3Terminal3WayValveSwitch(GrantAerona3BaseSwitch):
-    """Switch for Terminal 50-51-52 DHW 3way valve (Register 96)."""
+    """Switch for Terminal 50-51-52 DHW 3way valve (Holding Register 96)."""
 
     def __init__(
         self,
@@ -542,6 +566,7 @@ class GrantAerona3Terminal3WayValveSwitch(GrantAerona3BaseSwitch):
         self.entity_id = "switch.ashp_dhw_3way_valve"
         self._attr_icon = "mdi:valve"
         self._attr_entity_category = EntityCategory.CONFIG
+        
         self._register_id = 96
         self._on_value = 1
         self._off_value = 0
@@ -550,8 +575,10 @@ class GrantAerona3Terminal3WayValveSwitch(GrantAerona3BaseSwitch):
     def is_on(self) -> bool:
         if not self.coordinator.data:
             return True  # Default to enabled as per documentation
+        
         holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 1)  # Default 1 per doc
+        mode = holding_regs.get(self._register_id, 1)
+        
         return mode == 1
 
     @property
@@ -561,307 +588,223 @@ class GrantAerona3Terminal3WayValveSwitch(GrantAerona3BaseSwitch):
             "default_state": "Enabled (as per manufacturer default)",
         }
 
-class GrantAerona3HeatingModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for heating mode on/off."""
+
+# ============================================================================
+# COIL REGISTER SWITCHES
+# ============================================================================
+
+class GrantAerona3ClimateCompensationZone1Switch(GrantAerona3BaseSwitch):
+    """Switch for climatic curve (weather compensation) Zone 1 (Coil 2)."""
 
     def __init__(
         self,
         coordinator: GrantAerona3Coordinator,
         config_entry: ConfigEntry,
     ) -> None:
-        """Initialize the heating mode switch."""
         super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Heating Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_heating_mode"
-        self.entity_id = "switch.ashp_heating_mode"
-        self._attr_icon = "mdi:radiator"
+        self._attr_name = "ASHP Climate Compensation Zone 1"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_climate_comp_zone1"
+        self.entity_id = "switch.ashp_climate_compensation_zone1"
+        self._attr_icon = "mdi:chart-bell-curve"
         self._attr_entity_category = EntityCategory.CONFIG
         
-        # Register mapping
-        self._register_id = 40  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
+        self._register_type = "coil"
+        self._register_id = 2
+        self._on_value = True   # Climatic curve enabled
+        self._off_value = False  # Fixed set point
 
     @property
     def is_on(self) -> bool:
-        """Return true if heating mode is on."""
         if not self.coordinator.data:
             return False
         
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3DHWModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for DHW (Domestic Hot Water) mode."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the DHW mode switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP DHW Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_dhw_mode"
-        self.entity_id = "switch.ashp_dhw_mode"
-        self._attr_icon = "mdi:water-boiler"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 41  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if DHW mode is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3WeatherCompensationSwitch(GrantAerona3BaseSwitch):
-    """Switch for weather compensation."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the weather compensation switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Weather Compensation"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_weather_compensation"
-        self.entity_id = "switch.ashp_weather_compensation"
-        self._attr_icon = "mdi:weather-partly-cloudy"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 42  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if weather compensation is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3EcoModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for eco mode."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the eco mode switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Eco Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_eco_mode"
-        self.entity_id = "switch.ashp_eco_mode"
-        self._attr_icon = "mdi:leaf"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 43  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if eco mode is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3BoostModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for boost mode."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the boost mode switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Boost Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_boost_mode"
-        self.entity_id = "switch.ashp_boost_mode"
-        self._attr_icon = "mdi:rocket-launch"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 44  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if boost mode is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3FrostProtectionSwitch(GrantAerona3BaseSwitch):
-    """Switch for frost protection."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the frost protection switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Frost Protection"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_frost_protection"
-        self.entity_id = "switch.ashp_frost_protection"
-        self._attr_device_class = SwitchDeviceClass.SWITCH
-        self._attr_icon = "mdi:snowflake-alert"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping - based on const.py register 81
-        self._register_id = 81
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if frost protection is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode > 0  # Any value > 0 means enabled
-
-
-class GrantAerona3BackupHeaterSwitch(GrantAerona3BaseSwitch):
-    """Switch for backup heater enable/disable."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the backup heater switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Backup Heater Enable"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_backup_heater_enable"
-        self.entity_id = "switch.ashp_backup_heater_enable"
-        self._attr_icon = "mdi:heating-coil"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping - based on const.py register 84
-        self._register_id = 84
-        self._on_value = 1  # Replacement mode
-        self._off_value = 0  # Disabled
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if backup heater is enabled."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode > 0  # Any mode > 0 means enabled
-
-
-class GrantAerona3HolidayModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for holiday mode."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the holiday mode switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Holiday Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_holiday_mode"
-        self.entity_id = "switch.ashp_holiday_mode"
-        self._attr_icon = "mdi:palm-tree"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 45  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if holiday mode is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
-
-
-class GrantAerona3QuietModeSwitch(GrantAerona3BaseSwitch):
-    """Switch for quiet mode."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the quiet mode switch."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Quiet Mode"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_quiet_mode"
-        self.entity_id = "switch.ashp_quiet_mode"
-        self._attr_icon = "mdi:volume-off"
-        self._attr_entity_category = EntityCategory.CONFIG
-        
-        # Register mapping
-        self._register_id = 46  # Adjust based on your heat pump
-        self._on_value = 1
-        self._off_value = 0
-
-    @property
-    def is_on(self) -> bool:
-        """Return true if quiet mode is on."""
-        if not self.coordinator.data:
-            return False
-        
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        mode = holding_regs.get(self._register_id, 0)
-        
-        return mode == self._on_value
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
         return {
-            "description": "Reduces compressor speed for quieter operation",
-            "impact": "May reduce heating efficiency when enabled",
+            "description": "Enable weather compensation for Zone 1",
+            "when_off": "Uses fixed water temperature set point",
+            "when_on": "Adjusts water temperature based on outdoor temperature",
+        }
+
+
+class GrantAerona3AntiLegionellaSwitch(GrantAerona3BaseSwitch):
+    """Switch for anti-legionella function (Coil 6)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Anti-Legionella"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_anti_legionella"
+        self.entity_id = "switch.ashp_anti_legionella"
+        self._attr_icon = "mdi:bacteria"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 6
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Periodically heats DHW to kill legionella bacteria",
+            "temperature_setpoint": "See Holding Register 36",
+        }
+
+
+class GrantAerona3WaterSetpointControlSwitch(GrantAerona3BaseSwitch):
+    """Switch for water vs room setpoint control (Coil 7)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Water Setpoint Control"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_water_setpoint_control"
+        self.entity_id = "switch.ashp_water_setpoint_control"
+        self._attr_icon = "mdi:thermometer-water"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 7
+        self._on_value = True   # Water setpoint
+        self._off_value = False  # Room setpoint
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return True  # Default per documentation
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, True)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "when_on": "HP turns ON/OFF based on water temperature",
+            "when_off": "HP turns ON/OFF based on room temperature",
+        }
+
+
+class GrantAerona3FrostProtectionOutdoorSwitch(GrantAerona3BaseSwitch):
+    """Switch for frost protection by outdoor temperature (Coil 9)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Frost Protection (Outdoor)"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_frost_outdoor"
+        self.entity_id = "switch.ashp_frost_protection_outdoor"
+        self._attr_icon = "mdi:snowflake-thermometer"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 9
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Activates heating when outdoor temperature drops too low",
+            "related_settings": "See Holding Registers 54-56",
+        }
+
+
+class GrantAerona3FrostProtectionWaterSwitch(GrantAerona3BaseSwitch):
+    """Switch for frost protection by water temperature (Coil 10)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Frost Protection (Water)"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_frost_water"
+        self.entity_id = "switch.ashp_frost_protection_water"
+        self._attr_icon = "mdi:pipe-leak"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 10
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, False)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Activates heating when outgoing water temperature drops too low",
+            "related_settings": "See Holding Registers 52, 57",
+        }
+
+
+class GrantAerona3HumidityCompensationSwitch(GrantAerona3BaseSwitch):
+    """Switch for room humidity compensation (Coil 13)."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Humidity Compensation"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_humidity_comp"
+        self.entity_id = "switch.ashp_humidity_compensation"
+        self._attr_icon = "mdi:water-percent"
+        self._attr_entity_category = EntityCategory.CONFIG
+        
+        self._register_type = "coil"
+        self._register_id = 13
+        self._on_value = True
+        self._off_value = False
+
+    @property
+    def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return True  # Default per documentation
+        
+        coil_regs = self.coordinator.data.get("coil_registers", {})
+        return coil_regs.get(self._register_id, True)
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "description": "Adjusts water temperature based on room humidity",
+            "related_settings": "See Holding Registers 60-62 for humidity values",
         }
