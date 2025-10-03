@@ -291,14 +291,27 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     async def async_write_coil(self, address: int, value: bool) -> bool:
         """Write to a coil register."""
+        # Create a fresh client like async_write_register does
+        client = ModbusTcpClient(
+            host=self.host,
+            port=self.port,
+            timeout=5,
+        )
+        
         try:
-            connected = await self.hass.async_add_executor_job(self._client.connect)
+            connected = await asyncio.wait_for(
+                self.hass.async_add_executor_job(client.connect),
+                timeout=10.0
+            )
             if not connected:
                 _LOGGER.error("Failed to connect for writing coil %d", address)
                 return False
             
-            result = await self.hass.async_add_executor_job(
-                lambda: self._client.write_coil(address, value, device_id=self.unit_id)
+            result = await asyncio.wait_for(
+                self.hass.async_add_executor_job(
+                    lambda: client.write_coil(address, value, device_id=self.unit_id)
+                ),
+                timeout=5.0
             )
             
             if result.isError():
@@ -313,6 +326,6 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             return False
         finally:
             try:
-                await self.hass.async_add_executor_job(self._client.close)
+                await self.hass.async_add_executor_job(client.close)
             except Exception:
                 pass
