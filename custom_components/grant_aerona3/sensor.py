@@ -400,7 +400,7 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
         self._attr_unique_id = f"ashp_{config_entry.entry_id}_coefficient_of_performance"
         self.entity_id = "sensor.ashp_coefficient_of_performance"
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = None
+        self._attr_native_unit_of_measurement = ""
         self._attr_icon = "mdi:speedometer"
 
     @property
