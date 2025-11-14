@@ -234,7 +234,7 @@ INPUT_REGISTER_MAP = {
         "state_class": None,
         "scale": 1,
         "offset": 0,
-        "description": "Legionella Cycle (0=Not Running, 1=Running"
+        "description": "Legionella Cycle (0=Not Running, 1=Running)"
     },
     16: {
         "name": "DHW Tank Temperature",
