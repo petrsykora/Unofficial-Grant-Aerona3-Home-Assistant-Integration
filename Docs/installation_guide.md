@@ -172,8 +172,8 @@ For accurate COP (Coefficient of Performance) calculations:
 3. Typical values:
    - **6kW model**: 15-18 L/min
    - **8kW model**: 18-22 L/min
-   - **12kW model**: 20-25 L/min
-   - **16kW model**: 25-30 L/min
+   - **13kW model**: 20-25 L/min
+   - **17kW model**: 25-30 L/min
 
 ### Step 3: Create Dashboard
 Add entities to your dashboard - see [Examples](../Examples/) for dashboard card configurations.
