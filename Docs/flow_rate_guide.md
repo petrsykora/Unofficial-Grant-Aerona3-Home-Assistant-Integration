@@ -24,8 +24,8 @@ To calculate heat output accurately, we need:
 |----------------|-------------------|-------|
 | **Aerona3 6kW** | 16 L/min | 15-18 L/min |
 | **Aerona3 8kW** | 20 L/min | 18-22 L/min |
-| **Aerona3 12kW** | 22 L/min | 20-25 L/min |
-| **Aerona3 16kW** | 27 L/min | 25-30 L/min |
+| **Aerona3 13kW** | 22 L/min | 20-25 L/min |
+| **Aerona3 17kW** | 27 L/min | 25-30 L/min |
 
 ![Flow Rates](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/Flow_Rates.jpeg)
 
