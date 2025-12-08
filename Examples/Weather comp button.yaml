@@ -1,0 +1,6 @@
+type: button
+name: Open WC Curve Plotter
+icon: mdi:chart-bell-curve
+tap_action:
+  action: url
+  url_path: /local/wc-plotter.html
