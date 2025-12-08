@@ -1,0 +1,2 @@
+To use copy the wc-plotter file and place it in the www folder of your Home Assistant instance. then create a button on the dashboard of your choice and just click the button.
+Enter your design temps and if you like the current OAT. Then use the sliders to adjust your test curve. I have found using the full range of your ashp works well then adjust it left and right using the OAT max and min values.
