@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Compensation Curve Plotter</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: auto;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            min-height: 100vh;
+            width: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%);
+            color: white;
+            padding: 20px 24px;
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 0;
+            flex: 1;
+            min-height: calc(100vh - 90px);
+        }
+        
+        .sidebar {
+            background: #fafafa;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .chart-container {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .section {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .section h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #666;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+        
+        .param {
+            margin-bottom: 18px;
+        }
+        
+        .param:last-child {
+            margin-bottom: 0;
+        }
+        
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .param label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #444;
+        }
+        
+        .param .value {
+            font-weight: 700;
+            color: #1E88E5;
+            font-size: 15px;
+        }
+        
+        .param input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .param input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1E88E5;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .param input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #1E88E5;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .param input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1E88E5;
+            text-align: center;
+        }
+        
+        .param input[type="number"]:focus {
+            outline: none;
+            border-color: #1E88E5;
+            box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
+        }
+        
+        .stats {
+            background: #f0f7ff;
+            border: 1px solid #1E88E5;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .stats h2 {
+            color: #1E88E5;
+            margin-bottom: 12px;
+        }
+        
+        .slope-display {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1565C0;
+            margin-bottom: 8px;
+        }
+        
+        .intercept-display {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .design-section {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            border: 2px solid #4CAF50;
+        }
+        
+        .design-section h2 {
+            color: #4CAF50;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+        
+        .design-section .param label {
+            color: #2E7D32;
+        }
+        
+        .design-section input[type="number"] {
+            color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .design-section input[type="number"]:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
+        .design-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        
+        .design-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .design-toggle label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2E7D32;
+            cursor: pointer;
+        }
+        
+        .design-stats {
+            background: #f1f8e9;
+            border: 1px solid #4CAF50;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 14px;
+        }
+        
+        .design-stats h3 {
+            color: #4CAF50;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .design-slope {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2E7D32;
+            margin-bottom: 4px;
+        }
+        
+        .design-intercept {
+            font-size: 12px;
+            color: #558B2F;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            flex: 1;
+            min-height: 500px;
+            width: 100%;
+        }
+        
+        #chartCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            cursor: crosshair;
+        }
+        
+        .current-point {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 18px;
+        }
+        
+        .current-point h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #856404;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .current-inputs {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .current-input {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .current-input label {
+            font-size: 11px;
+            color: #856404;
+            margin-bottom: 4px;
+        }
+        
+        .current-input input {
+            padding: 8px;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .current-result {
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1E88E5;
+        }
+        
+        .chart-hint {
+            background: #e3f2fd;
+            border: 1px solid #1E88E5;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #1565C0;
+            text-align: center;
+        }
+        
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+            
+            .chart-wrapper {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Weather Compensation Curve Plotter</h1>
+            <p>Design and analyse your heat pump's weather compensation curve</p>
+        </div>
+        
+        <div class="content">
+            <div class="sidebar">
+                <div class="section">
+                    <h2>Cold Weather Point</h2>
+                    <div class="param">
+                        <div class="param-header">
+                            <label>Outside Temperature</label>
+                            <span class="value" id="coldOatValue">-20°C</span>
+                        </div>
+                        <input type="range" id="coldOat" min="-30" max="10" step="1" value="-20">
+                    </div>
+                    <div class="param">
+                        <div class="param-header">
+                            <label>Flow Temperature</label>
+                            <span class="value" id="coldFlowValue">55°C</span>
+                        </div>
+                        <input type="range" id="coldFlow" min="25" max="65" step="1" value="55">
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2>Warm Weather Point</h2>
+                    <div class="param">
+                        <div class="param-header">
+                            <label>Outside Temperature</label>
+                            <span class="value" id="warmOatValue">20°C</span>
+                        </div>
+                        <input type="range" id="warmOat" min="0" max="30" step="1" value="20">
+                    </div>
+                    <div class="param">
+                        <div class="param-header">
+                            <label>Flow Temperature</label>
+                            <span class="value" id="warmFlowValue">23°C</span>
+                        </div>
+                        <input type="range" id="warmFlow" min="20" max="45" step="1" value="23">
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <h2>Calculated Parameters</h2>
+                    <div class="slope-display" id="slopeDisplay">Slope: -0.80°C per °C</div>
+                    <div class="intercept-display" id="interceptDisplay">Parallel Shift: 39.0°C</div>
+                </div>
+                
+                <div class="design-section">
+                    <div class="design-toggle">
+                        <input type="checkbox" id="showDesignCurve" checked>
+                        <label for="showDesignCurve">Show Design Curve</label>
+                    </div>
+                    <h2>Design Temperature Curve</h2>
+                    <div class="param">
+                        <label>Min OAT (°C)</label>
+                        <input type="number" id="designColdOat" value="-3" step="0.5">
+                    </div>
+                    <div class="param">
+                        <label>Max Flow @ Min OAT (°C)</label>
+                        <input type="number" id="designColdFlow" value="50" step="0.5">
+                    </div>
+                    <div class="param">
+                        <label>Max OAT (°C)</label>
+                        <input type="number" id="designWarmOat" value="15" step="0.5">
+                    </div>
+                    <div class="param">
+                        <label>Min Flow @ Max OAT (°C)</label>
+                        <input type="number" id="designWarmFlow" value="30" step="0.5">
+                    </div>
+                    <div class="design-stats">
+                        <h3>Design Curve Parameters</h3>
+                        <div class="design-slope" id="designSlopeDisplay">Slope: -1.11°C per °C</div>
+                        <div class="design-intercept" id="designInterceptDisplay">Parallel Shift: 46.7°C</div>
+                    </div>
+                </div>
+                
+                <div class="current-point">
+                    <h3>Test Current Conditions</h3>
+                    <div class="current-inputs">
+                        <div class="current-input">
+                            <label>Outside Temp (°C)</label>
+                            <input type="number" id="currentOat" value="-3.5" step="0.1">
+                        </div>
+                    </div>
+                    <div class="current-result">
+                        Flow Temp: <span id="currentFlowResult">41.8°C</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div class="chart-hint">
+                    💡 Click anywhere on the chart to see comparison crosshairs. Click again to move them.
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const elements = {
+            coldOat: document.getElementById('coldOat'),
+            coldFlow: document.getElementById('coldFlow'),
+            warmOat: document.getElementById('warmOat'),
+            warmFlow: document.getElementById('warmFlow'),
+            coldOatValue: document.getElementById('coldOatValue'),
+            coldFlowValue: document.getElementById('coldFlowValue'),
+            warmOatValue: document.getElementById('warmOatValue'),
+            warmFlowValue: document.getElementById('warmFlowValue'),
+            slopeDisplay: document.getElementById('slopeDisplay'),
+            interceptDisplay: document.getElementById('interceptDisplay'),
+            currentOat: document.getElementById('currentOat'),
+            currentFlowResult: document.getElementById('currentFlowResult'),
+            designColdOat: document.getElementById('designColdOat'),
+            designColdFlow: document.getElementById('designColdFlow'),
+            designWarmOat: document.getElementById('designWarmOat'),
+            designWarmFlow: document.getElementById('designWarmFlow'),
+            designSlopeDisplay: document.getElementById('designSlopeDisplay'),
+            designInterceptDisplay: document.getElementById('designInterceptDisplay'),
+            showDesignCurve: document.getElementById('showDesignCurve')
+        };
+
+        let chart;
+        let crosshairPoint = null;
+
+        function calculateCurve() {
+            const x1 = parseFloat(elements.coldOat.value);
+            const y1 = parseFloat(elements.coldFlow.value);
+            const x2 = parseFloat(elements.warmOat.value);
+            const y2 = parseFloat(elements.warmFlow.value);
+
+            const slope = (y2 - y1) / (x2 - x1);
+            const intercept = y1 - (slope * x1);
+
+            return { 
+                slope, 
+                intercept, 
+                minFlow: Math.min(y1, y2), 
+                maxFlow: Math.max(y1, y2),
+                coldOat: x1,
+                coldFlow: y1,
+                warmOat: x2,
+                warmFlow: y2
+            };
+        }
+
+        function calculateDesignCurve() {
+            const x1 = parseFloat(elements.designColdOat.value);
+            const y1 = parseFloat(elements.designColdFlow.value);
+            const x2 = parseFloat(elements.designWarmOat.value);
+            const y2 = parseFloat(elements.designWarmFlow.value);
+
+            const slope = (y2 - y1) / (x2 - x1);
+            const intercept = y1 - (slope * x1);
+
+            return { 
+                slope, 
+                intercept, 
+                minFlow: Math.min(y1, y2), 
+                maxFlow: Math.max(y1, y2),
+                coldOat: x1,
+                coldFlow: y1,
+                warmOat: x2,
+                warmFlow: y2
+            };
+        }
+
+        function calculateFlowTemp(oat, params) {
+            let flowTemp = (params.slope * oat) + params.intercept;
+            flowTemp = Math.max(flowTemp, params.minFlow);
+            flowTemp = Math.min(flowTemp, params.maxFlow);
+            return flowTemp;
+        }
+
+        function generateCurveData(params) {
+            const curveData = [];
+            for (let oat = -24; oat <= 25; oat += 0.5) {
+                const flowTemp = calculateFlowTemp(oat, params);
+                curveData.push({ x: oat, y: flowTemp });
+            }
+            return curveData;
+        }
+
+        function updateCurrentFlow() {
+            const params = calculateCurve();
+            const currentOat = parseFloat(elements.currentOat.value);
+            const currentFlow = calculateFlowTemp(currentOat, params);
+            elements.currentFlowResult.textContent = currentFlow.toFixed(1) + '°C';
+        }
+
+        function updateChart() {
+            const params = calculateCurve();
+            const designParams = calculateDesignCurve();
+            
+            // Update displays
+            elements.coldOatValue.textContent = `${params.coldOat.toFixed(0)}°C`;
+            elements.coldFlowValue.textContent = `${params.coldFlow.toFixed(0)}°C`;
+            elements.warmOatValue.textContent = `${params.warmOat.toFixed(0)}°C`;
+            elements.warmFlowValue.textContent = `${params.warmFlow.toFixed(0)}°C`;
+            elements.slopeDisplay.textContent = `Slope: ${params.slope.toFixed(2)}°C per °C`;
+            elements.interceptDisplay.textContent = `Parallel Shift: ${params.intercept.toFixed(1)}°C`;
+
+            // Update design curve displays
+            elements.designSlopeDisplay.textContent = `Slope: ${designParams.slope.toFixed(2)}°C per °C`;
+            elements.designInterceptDisplay.textContent = `Parallel Shift: ${designParams.intercept.toFixed(1)}°C`;
+
+            // Update current flow calculation
+            updateCurrentFlow();
+
+            // Generate curve data
+            const curveData = generateCurveData(params);
+            const designCurveData = generateCurveData(designParams);
+
+            const ctx = document.getElementById('chartCanvas');
+            
+            if (chart) {
+                chart.data.datasets[0].data = curveData;
+                chart.data.datasets[1].data = [{ x: params.coldOat, y: params.coldFlow }];
+                chart.data.datasets[2].data = [{ x: params.warmOat, y: params.warmFlow }];
+                chart.data.datasets[3].data = designCurveData;
+                chart.data.datasets[4].data = [{ x: designParams.coldOat, y: designParams.coldFlow }];
+                chart.data.datasets[5].data = [{ x: designParams.warmOat, y: designParams.warmFlow }];
+                
+                // Show/hide design curve
+                const showDesign = elements.showDesignCurve.checked;
+                chart.data.datasets[3].hidden = !showDesign;
+                chart.data.datasets[4].hidden = !showDesign;
+                chart.data.datasets[5].hidden = !showDesign;
+                
+                chart.update('none');
+            } else {
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Weather Compensation Curve',
+                                data: curveData,
+                                borderColor: '#1E88E5',
+                                backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                                borderWidth: 3,
+                                pointRadius: 0,
+                                fill: true,
+                                tension: 0,
+                                order: 2
+                            },
+                            {
+                                label: 'Cold Weather Point',
+                                data: [{ x: params.coldOat, y: params.coldFlow }],
+                                borderColor: '#fff',
+                                backgroundColor: '#1E88E5',
+                                borderWidth: 3,
+                                pointRadius: 8,
+                                pointHoverRadius: 10,
+                                showLine: false,
+                                order: 1
+                            },
+                            {
+                                label: 'Warm Weather Point',
+                                data: [{ x: params.warmOat, y: params.warmFlow }],
+                                borderColor: '#fff',
+                                backgroundColor: '#FF6B6B',
+                                borderWidth: 3,
+                                pointRadius: 8,
+                                pointHoverRadius: 10,
+                                showLine: false,
+                                order: 1
+                            },
+                            {
+                                label: 'Design Temperature Curve',
+                                data: designCurveData,
+                                borderColor: '#4CAF50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.05)',
+                                borderWidth: 3,
+                                borderDash: [10, 5],
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0,
+                                order: 3,
+                                hidden: !elements.showDesignCurve.checked
+                            },
+                            {
+                                label: 'Design Cold Point',
+                                data: [{ x: designParams.coldOat, y: designParams.coldFlow }],
+                                borderColor: '#fff',
+                                backgroundColor: '#4CAF50',
+                                borderWidth: 3,
+                                pointRadius: 7,
+                                pointHoverRadius: 9,
+                                showLine: false,
+                                order: 1,
+                                hidden: !elements.showDesignCurve.checked
+                            },
+                            {
+                                label: 'Design Warm Point',
+                                data: [{ x: designParams.warmOat, y: designParams.warmFlow }],
+                                borderColor: '#fff',
+                                backgroundColor: '#81C784',
+                                borderWidth: 3,
+                                pointRadius: 7,
+                                pointHoverRadius: 9,
+                                showLine: false,
+                                order: 1,
+                                hidden: !elements.showDesignCurve.checked
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        },
+                        onClick: function(event, activeElements) {
+                            const canvasPosition = Chart.helpers.getRelativePosition(event, chart);
+                            const dataX = chart.scales.x.getValueForPixel(canvasPosition.x);
+                            
+                            if (dataX >= -24 && dataX <= 25) {
+                                const params = calculateCurve();
+                                const designParams = calculateDesignCurve();
+                                const wcY = calculateFlowTemp(dataX, params);
+                                const designY = calculateFlowTemp(dataX, designParams);
+                                
+                                crosshairPoint = {
+                                    x: dataX,
+                                    wcY: wcY,
+                                    designY: designY
+                                };
+                                
+                                chart.update('none');
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    },
+                                    filter: function(legendItem, data) {
+                                        // Hide design curve elements from legend if disabled
+                                        if (!elements.showDesignCurve.checked) {
+                                            const designLabels = ['Design Temperature Curve', 'Design Cold Point', 'Design Warm Point'];
+                                            if (designLabels.includes(legendItem.text)) {
+                                                return false;
+                                            }
+                                        }
+                                        return true;
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: { size: 13 },
+                                bodyFont: { size: 12 },
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].dataset.label;
+                                    },
+                                    label: function(context) {
+                                        const x = context.parsed.x.toFixed(1);
+                                        const y = context.parsed.y.toFixed(1);
+                                        return `Outside: ${x}°C → Flow: ${y}°C`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                title: {
+                                    display: true,
+                                    text: 'Outdoor Temperature (°C)',
+                                    font: { size: 14, weight: '600' },
+                                    padding: { top: 10 }
+                                },
+                                min: -24,
+                                max: 25,
+                                ticks: {
+                                    stepSize: 2,
+                                    font: { size: 11 }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Flow Temperature (°C)',
+                                    font: { size: 14, weight: '600' },
+                                    padding: { bottom: 10 }
+                                },
+                                min: 15,
+                                max: 65,
+                                ticks: {
+                                    stepSize: 5,
+                                    font: { size: 11 }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
+                                }
+                            }
+                        }
+                    },
+                    plugins: [{
+                        id: 'temperatureLabels',
+                        afterDatasetsDraw: function(chart) {
+                            const ctx = chart.ctx;
+                            const params = calculateCurve();
+                            
+                            ctx.save();
+                            ctx.font = '9px sans-serif';
+                            ctx.fillStyle = '#666';
+                            ctx.textAlign = 'center';
+                            
+                            // Generate fresh label points based on current curve
+                            for (let oat = -24; oat <= 25; oat += 2) {
+                                const flowTemp = calculateFlowTemp(oat, params);
+                                const x = chart.scales.x.getPixelForValue(oat);
+                                const y = chart.scales.y.getPixelForValue(flowTemp);
+                                
+                                if (x > chart.chartArea.left && x < chart.chartArea.right &&
+                                    y > chart.chartArea.top && y < chart.chartArea.bottom) {
+                                    ctx.fillText(`${flowTemp.toFixed(1)}°`, x, y - 8);
+                                }
+                            }
+                            
+                            ctx.restore();
+                        }
+                    }, {
+                        id: 'crosshair',
+                        afterDatasetsDraw: function(chart) {
+                            if (!crosshairPoint) return;
+                            
+                            const ctx = chart.ctx;
+                            const chartArea = chart.chartArea;
+                            const x = chart.scales.x.getPixelForValue(crosshairPoint.x);
+                            const wcY = chart.scales.y.getPixelForValue(crosshairPoint.wcY);
+                            const designY = chart.scales.y.getPixelForValue(crosshairPoint.designY);
+                            
+                            ctx.save();
+                            
+                            // Draw shared vertical line
+                            ctx.strokeStyle = '#9E9E9E';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([5, 5]);
+                            ctx.beginPath();
+                            ctx.moveTo(x, chartArea.top);
+                            ctx.lineTo(x, chartArea.bottom);
+                            ctx.stroke();
+                            
+                            // WC Curve horizontal line (blue)
+                            ctx.strokeStyle = '#1E88E5';
+                            ctx.lineWidth = 2;
+                            ctx.setLineDash([5, 5]);
+                            ctx.beginPath();
+                            ctx.moveTo(chartArea.left, wcY);
+                            ctx.lineTo(chartArea.right, wcY);
+                            ctx.stroke();
+                            
+                            // Design Curve horizontal line (green) - only if design curve is shown
+                            if (elements.showDesignCurve.checked) {
+                                ctx.strokeStyle = '#4CAF50';
+                                ctx.lineWidth = 2;
+                                ctx.setLineDash([5, 5]);
+                                ctx.beginPath();
+                                ctx.moveTo(chartArea.left, designY);
+                                ctx.lineTo(chartArea.right, designY);
+                                ctx.stroke();
+                            }
+                            
+                            ctx.setLineDash([]);
+                            
+                            // WC intersection point (blue)
+                            ctx.fillStyle = '#1E88E5';
+                            ctx.beginPath();
+                            ctx.arc(x, wcY, 6, 0, 2 * Math.PI);
+                            ctx.fill();
+                            ctx.strokeStyle = '#fff';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            
+                            // Design intersection point (green) - only if design curve is shown
+                            if (elements.showDesignCurve.checked) {
+                                ctx.fillStyle = '#4CAF50';
+                                ctx.beginPath();
+                                ctx.arc(x, designY, 6, 0, 2 * Math.PI);
+                                ctx.fill();
+                                ctx.strokeStyle = '#fff';
+                                ctx.lineWidth = 2;
+                                ctx.stroke();
+                            }
+                            
+                            // Draw labels with background
+                            ctx.font = 'bold 12px sans-serif';
+                            ctx.textAlign = 'center';
+                            
+                            // X-axis label (OAT) - grey
+                            const xText = `${crosshairPoint.x.toFixed(1)}°C`;
+                            const xTextWidth = ctx.measureText(xText).width;
+                            ctx.fillStyle = '#9E9E9E';
+                            ctx.fillRect(x - xTextWidth/2 - 6, chartArea.bottom + 5, xTextWidth + 12, 20);
+                            ctx.fillStyle = 'white';
+                            ctx.fillText(xText, x, chartArea.bottom + 19);
+                            
+                            // Y-axis label for WC (blue)
+                            ctx.textAlign = 'right';
+                            const wcText = `${crosshairPoint.wcY.toFixed(1)}°C`;
+                            const wcTextWidth = ctx.measureText(wcText).width;
+                            
+                            if (elements.showDesignCurve.checked) {
+                                // Show both labels stacked
+                                const designText = `${crosshairPoint.designY.toFixed(1)}°C`;
+                                const designTextWidth = ctx.measureText(designText).width;
+                                
+                                // Calculate vertical positions to avoid overlap
+                                let wcLabelY = wcY;
+                                let designLabelY = designY;
+                                
+                                // If labels are too close, offset them
+                                if (Math.abs(wcY - designY) < 25) {
+                                    wcLabelY = Math.min(wcY, designY) - 15;
+                                    designLabelY = Math.max(wcY, designY) + 15;
+                                }
+                                
+                                // WC label (blue)
+                                ctx.fillStyle = '#1E88E5';
+                                ctx.fillRect(chartArea.left - wcTextWidth - 18, wcLabelY - 10, wcTextWidth + 12, 20);
+                                ctx.fillStyle = 'white';
+                                ctx.fillText(wcText, chartArea.left - 12, wcLabelY + 4);
+                                
+                                // Design label (green)
+                                ctx.fillStyle = '#4CAF50';
+                                ctx.fillRect(chartArea.left - designTextWidth - 18, designLabelY - 10, designTextWidth + 12, 20);
+                                ctx.fillStyle = 'white';
+                                ctx.fillText(designText, chartArea.left - 12, designLabelY + 4);
+                            } else {
+                                // Only show WC label
+                                ctx.fillStyle = '#1E88E5';
+                                ctx.fillRect(chartArea.left - wcTextWidth - 18, wcY - 10, wcTextWidth + 12, 20);
+                                ctx.fillStyle = 'white';
+                                ctx.fillText(wcText, chartArea.left - 12, wcY + 4);
+                            }
+                            
+                            ctx.restore();
+                        }
+                    }]
+                });
+            }
+        }
+
+        // Event listeners
+        [elements.coldOat, elements.coldFlow, elements.warmOat, elements.warmFlow].forEach(input => {
+            input.addEventListener('input', updateChart);
+        });
+
+        [elements.designColdOat, elements.designColdFlow, elements.designWarmOat, elements.designWarmFlow].forEach(input => {
+            input.addEventListener('input', updateChart);
+        });
+
+        elements.showDesignCurve.addEventListener('change', updateChart);
+        elements.currentOat.addEventListener('input', updateCurrentFlow);
+
+        // Initial render
+        updateChart();
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (chart) {
+                chart.resize();
+            }
+        });
+    </script>
+</body>
+</html>
