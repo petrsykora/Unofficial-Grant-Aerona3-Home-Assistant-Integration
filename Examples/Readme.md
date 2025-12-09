@@ -2,3 +2,4 @@ To use copy the wc-plotter file and place it in the www folder of your Home Assi
 Enter your design temps and if you like the current OAT. Then use the sliders to adjust your test curve. I have found using the full range of your ashp works well then adjust it left and right using the OAT max and min values.
 
 Huge shout out to DamonC for the original app that he built, that led to this UI
+you can find his original here: https://heat-curve-plotter.lovable.app
