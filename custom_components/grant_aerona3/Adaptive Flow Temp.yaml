@@ -18,7 +18,7 @@ blueprint:
           domain: sensor
           device_class: temperature
     wind_speed_sensor:
-      name: "Local wind-speed sensor (m/s)"
+      name: "Local wind-speed sensor (km/h)"
       selector:
         entity:
           domain: sensor
@@ -92,8 +92,8 @@ variables:
     {%- set hrs = anticipation_hours | int %}
     {{ state_attr(forecast_weather_entity,'forecast')[hrs - 1] }}
   forecast_temp: "{{ forecast.temperature | float(0) }}"
-  forecast_wind_mps: "{{ forecast.wind_speed | float(0) }}"
-  forecast_wind_kmh: "{{ (forecast_wind_mps * 3.6) | round(1) }}"
+  forecast_wind_kmh: "{{ forecast.wind_speed | float(0) }}"
+  
   
   # Calculate wind chill for forecast temp
   wind_chill: >
