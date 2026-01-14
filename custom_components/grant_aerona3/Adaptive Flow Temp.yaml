@@ -17,12 +17,12 @@ blueprint:
         entity:
           domain: sensor
           device_class: temperature
-    wind_speed_sensor:
-      name: "Local wind-speed sensor (km/h)"
+    wind_chill_sensor:
+      name: "Local wind chill sensor"
       selector:
         entity:
           domain: sensor
-          device_class: speed
+          device_class: temperature
     indoor_temp_sensors:
       name: "List of indoor temperature sensors to average"
       selector:
@@ -92,24 +92,13 @@ variables:
     {%- set hrs = anticipation_hours | int %}
     {{ state_attr(forecast_weather_entity,'forecast')[hrs - 1] }}
   forecast_temp: "{{ forecast.temperature | float(0) }}"
-  forecast_wind_kmh: "{{ forecast.wind_speed | float(0) }}"
   
-  
-  # Calculate wind chill for forecast temp
-  wind_chill: >
-    {%- set T = forecast_temp %}
-    {%- set V = forecast_wind_kmh %}
-    {% if T <= 10 and V >= 4 %}
-      {{ 13.12 + 0.6215*T - 11.37*V**0.16 + 0.3965*T*V**0.16 }}
-    {% else %}
-      {{ T }}
-    {% endif %}
-  
-  # Get actual outdoor temperature
+  # Get actual outdoor temperature and wind chill
   actual_outdoor: "{{ states(outdoor_temp_sensor) | float(0) }}"
+  actual_wind_chill: "{{ states(wind_chill_sensor) | float(0) }}"
   
   # Use the most pessimistic (coldest) temperature
-  eff_outdoor: "{{ [wind_chill | float, forecast_temp | float, actual_outdoor] | min }}"
+  eff_outdoor: "{{ [actual_wind_chill, forecast_temp, actual_outdoor] | min }}"
   
   # Calculate base target flow temp from outdoor conditions
   base_target: "{{ base_flow_temp - (eff_outdoor * temp_adjustment_factor) }}"
