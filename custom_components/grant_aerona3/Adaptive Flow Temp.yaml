@@ -99,19 +99,19 @@ condition: []
 
 action:
   - variables:
-      # Get blueprint inputs first
-      target_temp: "{{ !input target_room_temp | float(21) }}"
-      min_flow: "{{ !input min_flow_temp | float(23) }}"
-      max_flow: "{{ !input max_flow_temp | float(55) }}"
-      oat_low: "{{ !input curve_oat_low | float(-20) }}"
-      flow_high: "{{ !input curve_flow_high | float(38) }}"
-      oat_high: "{{ !input curve_oat_high | float(30) }}"
-      flow_low: "{{ !input curve_flow_low | float(23) }}"
-      room_adj: "{{ !input room_temp_adjustment | float(1.0) }}"
-      
-      # Get current temperatures
+      # Get current temperatures from sensors
       outdoor_temp: "{{ states('sensor.ashp_outdoor_air_temperature_remote_sensor') | float(0) }}"
       room_temp: "{{ states('sensor.average_room_temperature') | float(21) }}"
+      
+      # Get blueprint inputs - use direct reference without templates
+      target_temp: !input target_room_temp
+      min_flow: !input min_flow_temp
+      max_flow: !input max_flow_temp
+      oat_low: !input curve_oat_low
+      flow_high: !input curve_flow_high
+      oat_high: !input curve_oat_high
+      flow_low: !input curve_flow_low
+      room_adj: !input room_temp_adjustment
       
       # Calculate temperature error (positive = room too cold, negative = room too warm)
       temp_error: "{{ target_temp - room_temp }}"
