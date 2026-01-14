@@ -102,7 +102,10 @@ action:
       # Get current temperatures
       outdoor_temp: "{{ states('sensor.ashp_outdoor_air_temperature_remote_sensor') | float(0) }}"
       room_temp: "{{ states('sensor.average_room_temperature') | float(21) }}"
-      target_temp: "{{ target_room_temp }}"
+      target_temp: "{{ target_room_temp | float(21) }}"  # Added | float(21) here
+      
+      # Calculate temperature error (positive = room too cold, negative = room too warm)
+      temp_error: "{{ target_temp - room_temp }}"
       
       # Calculate temperature error (positive = room too cold, negative = room too warm)
       temp_error: "{{ target_temp - room_temp }}"
@@ -116,8 +119,9 @@ action:
         {% set flow = curve_flow_high - (slope * (outdoor_temp - curve_oat_low)) %}
         {{ [min_flow_temp, [flow, max_flow_temp] | min] | max }}
       
-      # Apply room temperature compensation
-      temp_adjustment: "{{ temp_error * room_temp_adjustment }}"
+# Apply room temperature compensation
+      temp_adjustment: "{{ temp_error * (room_temp_adjustment | float(1.0)) }}"
+
       
       # Calculate final flow temperature
       calculated_flow: >
