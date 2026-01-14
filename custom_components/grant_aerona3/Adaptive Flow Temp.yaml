@@ -99,33 +99,37 @@ condition: []
 
 action:
   - variables:
+      # Get blueprint inputs first
+      target_temp: "{{ !input target_room_temp | float(21) }}"
+      min_flow: "{{ !input min_flow_temp | float(23) }}"
+      max_flow: "{{ !input max_flow_temp | float(55) }}"
+      oat_low: "{{ !input curve_oat_low | float(-20) }}"
+      flow_high: "{{ !input curve_flow_high | float(38) }}"
+      oat_high: "{{ !input curve_oat_high | float(30) }}"
+      flow_low: "{{ !input curve_flow_low | float(23) }}"
+      room_adj: "{{ !input room_temp_adjustment | float(1.0) }}"
+      
       # Get current temperatures
       outdoor_temp: "{{ states('sensor.ashp_outdoor_air_temperature_remote_sensor') | float(0) }}"
       room_temp: "{{ states('sensor.average_room_temperature') | float(21) }}"
-      target_temp: "{{ target_room_temp | float(21) }}"  # Added | float(21) here
       
       # Calculate temperature error (positive = room too cold, negative = room too warm)
       temp_error: "{{ target_temp - room_temp }}"
       
-      # Calculate temperature error (positive = room too cold, negative = room too warm)
-      temp_error: "{{ target_temp - room_temp }}"
-      
-      # Weather compensation curve calculation using your curve points
-      # Your curve: -20°C OAT = 38°C flow, 30°C OAT = 23°C flow
+      # Weather compensation curve calculation
       base_flow: >
-        {% set oat_range = curve_oat_high - curve_oat_low %}
-        {% set flow_range = curve_flow_high - curve_flow_low %}
+        {% set oat_range = oat_high - oat_low %}
+        {% set flow_range = flow_high - flow_low %}
         {% set slope = flow_range / oat_range %}
-        {% set flow = curve_flow_high - (slope * (outdoor_temp - curve_oat_low)) %}
-        {{ [min_flow_temp, [flow, max_flow_temp] | min] | max }}
+        {% set flow = flow_high - (slope * (outdoor_temp - oat_low)) %}
+        {{ [min_flow, [flow, max_flow] | min] | max }}
       
-# Apply room temperature compensation
-      temp_adjustment: "{{ temp_error * (room_temp_adjustment | float(1.0)) }}"
-
+      # Apply room temperature compensation
+      temp_adjustment: "{{ temp_error * room_adj }}"
       
       # Calculate final flow temperature
       calculated_flow: >
-        {{ ([min_flow_temp, [base_flow | float + temp_adjustment, max_flow_temp] | min] | max) | round(1) }}
+        {{ ([min_flow, [base_flow | float + temp_adjustment, max_flow] | min] | max) | round(1) }}
       
       # Convert to modbus value (x10)
       modbus_value: "{{ (calculated_flow * 10) | int }}"
