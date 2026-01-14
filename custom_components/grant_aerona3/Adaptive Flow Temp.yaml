@@ -121,7 +121,7 @@ variables:
 
 trigger:
   - platform: time_pattern
-    minutes: "/{{ update_interval_mins }}"
+    minutes: "/15"
 
 action:
   - service: script.grant_write_holding_register_scaled_2
