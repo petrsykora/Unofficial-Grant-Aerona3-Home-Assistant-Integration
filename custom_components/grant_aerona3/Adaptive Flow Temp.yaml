@@ -1,0 +1,147 @@
+blueprint:
+  name: "Grant Aerona3 Adaptive Weather Compensation - Fixed Flow Only"
+  description: >
+    Dynamically adjusts the Grant Aerona3 fixed flow temperature (register 2) every 15 minutes
+    using forecast temperature, forecast wind-chill, actual outdoor conditions,
+    and the average indoor temperature to anticipate heating needs.
+  domain: automation
+  input:
+    forecast_weather_entity:
+      name: "Weather entity that supplies a 1-hour forecast"
+      selector:
+        entity:
+          domain: weather
+    outdoor_temp_sensor:
+      name: "Local outdoor temperature sensor"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    wind_speed_sensor:
+      name: "Local wind-speed sensor (m/s)"
+      selector:
+        entity:
+          domain: sensor
+          device_class: speed
+    indoor_temp_sensors:
+      name: "List of indoor temperature sensors to average"
+      selector:
+        entity:
+          multiple: true
+          domain: sensor
+          device_class: temperature
+    target_room_temp:
+      name: "Desired average indoor temp (°C)"
+      default: 21.0
+      selector:
+        number:
+          min: 15
+          max: 25
+          step: 0.1
+    anticipation_hours:
+      name: "Forecast hours to look ahead"
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 6
+          step: 1
+    update_interval_mins:
+      name: "How often to recalc (minutes)"
+      default: 15
+      selector:
+        number:
+          min: 5
+          max: 60
+          step: 5
+    base_flow_temp:
+      name: "Base flow temperature at 0°C outdoor (°C)"
+      default: 40.0
+      selector:
+        number:
+          min: 23
+          max: 55
+          step: 0.5
+    temp_adjustment_factor:
+      name: "Temperature adjustment per degree (°C)"
+      default: 1.5
+      selector:
+        number:
+          min: 0.5
+          max: 3.0
+          step: 0.1
+    indoor_correction_factor:
+      name: "Indoor temperature correction gain"
+      default: 2.0
+      selector:
+        number:
+          min: 0.5
+          max: 5.0
+          step: 0.5
+
+mode: single
+
+variables:
+  # Calculate average indoor temperature
+  avg_indoor: >
+    {% set temps = (states | selectattr('entity_id','in', indoor_temp_sensors) | map(attribute='state') | map('float', default=none) | list) %}
+    {{ (temps | select('defined') | list | average(default=target_room_temp)) | round(1) }}
+  
+  # Get forecast data
+  forecast: >
+    {%- set hrs = anticipation_hours | int %}
+    {{ state_attr(forecast_weather_entity,'forecast')[hrs - 1] }}
+  forecast_temp: "{{ forecast.temperature | float(0) }}"
+  forecast_wind_mps: "{{ forecast.wind_speed | float(0) }}"
+  forecast_wind_kmh: "{{ (forecast_wind_mps * 3.6) | round(1) }}"
+  
+  # Calculate wind chill for forecast temp
+  wind_chill: >
+    {%- set T = forecast_temp %}
+    {%- set V = forecast_wind_kmh %}
+    {% if T <= 10 and V >= 4 %}
+      {{ 13.12 + 0.6215*T - 11.37*V**0.16 + 0.3965*T*V**0.16 }}
+    {% else %}
+      {{ T }}
+    {% endif %}
+  
+  # Get actual outdoor temperature
+  actual_outdoor: "{{ states(outdoor_temp_sensor) | float(0) }}"
+  
+  # Use the most pessimistic (coldest) temperature
+  eff_outdoor: "{{ [wind_chill | float, forecast_temp | float, actual_outdoor] | min }}"
+  
+  # Calculate base target flow temp from outdoor conditions
+  base_target: "{{ base_flow_temp - (eff_outdoor * temp_adjustment_factor) }}"
+  
+  # Calculate indoor temperature error
+  indoor_delta: "{{ target_room_temp | float - avg_indoor }}"
+  
+  # Apply indoor correction
+  indoor_correction: "{{ indoor_correction_factor * indoor_delta }}"
+  
+  # Calculate final target
+  calc_target: "{{ (base_target + indoor_correction) | round(1) }}"
+  
+  # Clamp to valid range (23-55°C) in 0.5°C steps
+  clamped_target: >
+    {% set min_temp = 23 %}
+    {% set max_temp = 55 %}
+    {% set target = [[max_temp, [min_temp, calc_target] | max] | min, 0.5] | round(0) * 0.5 %}
+    {{ target }}
+
+trigger:
+  - platform: time_pattern
+    minutes: "/{{ update_interval_mins }}"
+
+action:
+  - service: script.grant_write_holding_register_scaled_2
+    data:
+      temperature: "{{ clamped_target }}"
+  
+  - service: system_log.write
+    data:
+      message: >
+        Grant Aerona3 adaptive: eff_outdoor={{ eff_outdoor }}°C, avg_indoor={{ avg_indoor }}°C, 
+        indoor_delta={{ indoor_delta }}°C, target_flow={{ clamped_target }}°C
+      level: info
