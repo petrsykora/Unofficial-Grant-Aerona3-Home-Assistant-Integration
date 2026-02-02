@@ -5,9 +5,9 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_SCAN_INTERVAL
 
 DOMAIN = "grant_aerona3"
-DEFAULT_SCAN_INTERVAL = 10  # seconds
+DEFAULT_SCAN_INTERVAL = 30  # seconds
 CONF_FLOW_RATE_LPM = "flow_rate_lpm"
-DEFAULT_FLOW_RATE_LPM = 10  # L/min
+DEFAULT_FLOW_RATE_LPM = 34  # L/min
 
 class GrantAerona3OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Grant Aerona3 options flow."""

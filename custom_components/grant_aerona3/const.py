@@ -82,7 +82,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 # Default values
 DEFAULT_PORT = 502
 DEFAULT_UNIT_ID = 1
-DEFAULT_SCAN_INTERVAL = 10
+DEFAULT_SCAN_INTERVAL = 30
 
 # Register types
 INPUT_REGISTERS = "input"
@@ -216,7 +216,7 @@ INPUT_REGISTER_MAP = {
         "state_class": None,
         "scale": 1,
         "offset": 0,
-        "description": "Selected DHW operating mode (0=disable, 1=Comfort, 2=Economy, 3=Force)"
+        "description": "Selected DHW operating mode (0=Off, 1=Comfort, 2=Economy, 3=Force)"
     },
     14: {
         "name": "Legionella Cycle Day",
@@ -322,7 +322,7 @@ HOLDING_REGISTER_MAP = {
         "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone1"
     },
     5: {
-        "name": "Min. Outdoor Air Temperature Zone1",
+        "name": "Min Outdoor Air Temperature Zone1",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
@@ -334,7 +334,7 @@ HOLDING_REGISTER_MAP = {
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone1"
     },
     6: {
-        "name": "Max. Outdoor Air Temperature Zone1",
+        "name": "Max Outdoor Air Temperature Zone1",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
@@ -382,7 +382,7 @@ HOLDING_REGISTER_MAP = {
         "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone2"
     },
     10: {
-        "name": "Min. Outdoor Air Temperature Zone2",
+        "name": "Min Outdoor Air Temperature Zone2",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
@@ -394,7 +394,7 @@ HOLDING_REGISTER_MAP = {
         "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
     },
     11: {
-        "name": "Max. Outdoor Air Temperature Zone2",
+        "name": "Max Outdoor Air Temperature Zone2",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
@@ -706,7 +706,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
-        "min": 50.0,
+        "min": 20.0,
         "max": 100.0,
         "step": 5.0,
         "description": "Max. frequency of Night mode"

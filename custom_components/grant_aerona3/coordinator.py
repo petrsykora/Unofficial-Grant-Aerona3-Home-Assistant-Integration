@@ -42,7 +42,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         flow_rate_lpm = (
             entry.options.get("flow_rate_lpm")
             if hasattr(entry, "options") and entry.options.get("flow_rate_lpm") is not None
-            else entry.data.get("flow_rate_lpm", 30.0)
+            else entry.data.get("flow_rate_lpm", 34.0)
         )
         self.flow_rate_lpm = flow_rate_lpm
 
@@ -278,6 +278,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return False
             
             _LOGGER.info("Successfully wrote value %d to register %d", value, register)
+            await self.async_request_refresh()
             return True
             
         except Exception as err:
@@ -319,6 +320,9 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return False
             
             _LOGGER.info("Successfully wrote value %s to coil %d", value, address)
+            await self.async_request_refresh()
+            return True
+
             return True
             
         except Exception as err:

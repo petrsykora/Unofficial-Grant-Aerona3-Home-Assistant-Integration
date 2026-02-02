@@ -92,7 +92,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -130,10 +130,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Grant Aerona3 options flow."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -156,12 +152,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         "flow_rate_lpm",
                         default=self.config_entry.options.get(
                             "flow_rate_lpm",
-                            self.config_entry.data.get("flow_rate_lpm", 30.0)
+                            self.config_entry.data.get("flow_rate_lpm", 34.0)
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
                 }
             ),
         )
+
 
 
 class CannotConnect(HomeAssistantError):

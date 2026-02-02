@@ -265,7 +265,7 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         }
 
         # Default flow rate - typical for residential Grant Aerona3
-        self._flow_rate = getattr(coordinator, 'flow_rate_lpm', 30.0)
+        self._flow_rate = getattr(coordinator, 'flow_rate_lpm', 34.0)
         
         _LOGGER.debug("Flow rate entity initialized with value: %s L/min", self._flow_rate)
 
