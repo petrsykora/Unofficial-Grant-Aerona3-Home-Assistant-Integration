@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-from pymodbus.client import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.exceptions import ModbusException
 
 from homeassistant import config_entries
@@ -22,6 +22,13 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_UNIT_ID,
     DEFAULT_SCAN_INTERVAL,
+    CONF_CONNECTION_TYPE,
+    CONF_SERIAL_PORT,
+    CONF_BAUDRATE,
+    CONF_BYTESIZE,
+    CONF_METHOD,
+    CONF_PARITY,
+    CONF_STOPBITS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,10 +37,18 @@ INTEGRATION_VERSION = "1.1.1"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
+        vol.Required(CONF_CONNECTION_TYPE, default="tcp"): vol.In(["tcp", "serial"]),
+        vol.Optional(CONF_HOST, default=""): cv.string,
+        vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): vol.All(vol.Coerce(int), vol.Range(min=1, max=247)),
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
+        # Serial options - only used if connection_type == 'serial'
+        vol.Optional(CONF_SERIAL_PORT, default="/dev/ttyUSB0"): cv.string,
+        vol.Optional(CONF_BAUDRATE, default=19200): vol.All(vol.Coerce(int)),
+        vol.Optional(CONF_BYTESIZE, default=8): vol.All(vol.Coerce(int)),
+        vol.Optional(CONF_METHOD, default="rtu"): cv.string,
+        vol.Optional(CONF_PARITY, default="N"): cv.string,
+        vol.Optional(CONF_STOPBITS, default=2): vol.All(vol.Coerce(int)),
     }
 )
 
@@ -43,12 +58,32 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
-    host = data[CONF_HOST]
-    port = data[CONF_PORT]
+    connection_type = data.get(CONF_CONNECTION_TYPE, "tcp")
+    host = data.get(CONF_HOST, "")
+    port = data.get(CONF_PORT, DEFAULT_PORT)
     unit_id = data[CONF_UNIT_ID]
+    serial_port = data.get(CONF_SERIAL_PORT)
+    baudrate = data.get(CONF_BAUDRATE)
+    bytesize = data.get(CONF_BYTESIZE)
+    method = data.get(CONF_METHOD)
+    parity = data.get(CONF_PARITY)
+    stopbits = data.get(CONF_STOPBITS)
 
     # Test the connection
-    client = ModbusTcpClient(host=host, port=port, timeout=5)
+    if connection_type == "tcp":
+        if not host:
+            raise CannotConnect("Host required for TCP connection")
+        client = ModbusTcpClient(host=host, port=port, timeout=5)
+    else:
+        client = ModbusSerialClient(
+            method=method,
+            port=serial_port,
+            baudrate=baudrate,
+            bytesize=bytesize,
+            parity=parity,
+            stopbits=stopbits,
+            timeout=5,
+        )
 
     try:
         if not await hass.async_add_executor_job(client.connect):
@@ -62,25 +97,37 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         if result.isError():
             raise CannotConnect("Failed to read from heat pump - check Unit ID")
 
-        _LOGGER.info("Successfully connected to Grant Aerona3 at %s:%s", host, port)
+        _LOGGER.info("Successfully connected to Grant Aerona3 (%s)", "serial" if connection_type == "serial" else f"{host}:{port}")
 
     except ModbusException as err:
-        _LOGGER.error("Modbus error connecting to %s:%s - %s", host, port, err)
+        _LOGGER.error("Modbus error connecting - %s", err)
         raise CannotConnect(f"Modbus communication error: {err}") from err
     except Exception as err:
-        _LOGGER.error("Unexpected error connecting to %s:%s - %s", host, port, err)
+        _LOGGER.error("Unexpected error connecting - %s", err)
         raise CannotConnect(f"Unexpected error: {err}") from err
     finally:
         await hass.async_add_executor_job(client.close)
 
     # Return info that you want to store in the config entry.
-    return {
-        "title": f"ASHP Grant Aerona3 ({host})",
-        "host": host,
-        "port": port,
+    # Store relevant values depending on connection type
+    base = {
+        "title": f"ASHP Grant Aerona3 ({serial_port if connection_type=='serial' else host})",
+        "connection_type": connection_type,
         "unit_id": unit_id,
         "scan_interval": data[CONF_SCAN_INTERVAL],
     }
+    if connection_type == "tcp":
+        base.update({"host": host, "port": port})
+    else:
+        base.update({
+            "serial_port": serial_port,
+            "baudrate": baudrate,
+            "bytesize": bytesize,
+            "method": method,
+            "parity": parity,
+            "stopbits": stopbits,
+        })
+    return base
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -110,9 +157,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 # Check if already configured
-                await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}")
+                if user_input.get(CONF_CONNECTION_TYPE) == "serial":
+                    unique = f"serial:{user_input.get(CONF_SERIAL_PORT)}"
+                else:
+                    unique = f"{user_input.get(CONF_HOST)}:{user_input.get(CONF_PORT)}"
+                await self.async_set_unique_id(unique)
                 self._abort_if_unique_id_configured()
-                
+
                 return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(

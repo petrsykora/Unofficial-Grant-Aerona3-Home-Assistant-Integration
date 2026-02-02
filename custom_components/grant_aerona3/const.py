@@ -78,6 +78,13 @@ CONF_HOST = "host"
 CONF_PORT = "port"
 CONF_UNIT_ID = "unit_id"
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_CONNECTION_TYPE = "connection_type"
+CONF_SERIAL_PORT = "serial_port"
+CONF_BAUDRATE = "baudrate"
+CONF_BYTESIZE = "bytesize"
+CONF_METHOD = "method"
+CONF_PARITY = "parity"
+CONF_STOPBITS = "stopbits"
 
 # Default values
 DEFAULT_PORT = 502

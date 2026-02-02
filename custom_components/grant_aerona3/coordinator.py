@@ -5,7 +5,7 @@ import logging
 from datetime import timedelta
 from typing import Any, Dict
 
-from pymodbus.client import ModbusTcpClient
+from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.exceptions import ModbusException
 
 from homeassistant.config_entries import ConfigEntry
@@ -30,8 +30,15 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.entry = entry
-        self.host = entry.data[CONF_HOST]
-        self.port = entry.data[CONF_PORT]
+        self.connection_type = entry.data.get("connection_type", "tcp")
+        self.host = entry.data.get(CONF_HOST)
+        self.port = entry.data.get(CONF_PORT)
+        self.serial_port = entry.data.get("serial_port")
+        self.baudrate = entry.data.get("baudrate")
+        self.bytesize = entry.data.get("bytesize")
+        self.method = entry.data.get("method")
+        self.parity = entry.data.get("parity")
+        self.stopbits = entry.data.get("stopbits")
         self.unit_id = entry.data[CONF_UNIT_ID]
         # Use options if present, else data, else default
         scan_interval = (
@@ -52,11 +59,19 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=scan_interval),
         )
-        self._client = ModbusTcpClient(
-            host=self.host,
-            port=self.port,
-            timeout=10,
-        )
+        # Create a persistent client reference (not always used; per-fetch clients created)
+        if self.connection_type == "tcp":
+            self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
+        else:
+            self._client = ModbusSerialClient(
+                method=self.method,
+                port=self.serial_port,
+                baudrate=self.baudrate,
+                bytesize=self.bytesize,
+                parity=self.parity,
+                stopbits=self.stopbits,
+                timeout=10,
+            )
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
@@ -75,11 +90,18 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         }
         
         # Create a fresh client for each fetch to avoid connection issues
-        client = ModbusTcpClient(
-            host=self.host,
-            port=self.port,
-            timeout=5,  # Reduced timeout
-        )
+        if self.connection_type == "tcp":
+            client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
+        else:
+            client = ModbusSerialClient(
+                method=self.method,
+                port=self.serial_port,
+                baudrate=self.baudrate,
+                bytesize=self.bytesize,
+                parity=self.parity,
+                stopbits=self.stopbits,
+                timeout=5,
+            )
         
         try:
             # Connect with timeout
@@ -114,7 +136,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 pass
         return data
 
-    async def _read_input_registers(self, client: ModbusTcpClient) -> Dict[int, float]:
+    async def _read_input_registers(self, client: object) -> Dict[int, float]:
         input_data = {}
         
         # Read only the most critical registers first to test connectivity
@@ -162,7 +184,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         
         return input_data
 
-    async def _read_holding_registers(self, client: ModbusTcpClient) -> Dict[int, float]:
+    async def _read_holding_registers(self, client: object) -> Dict[int, float]:
         holding_data = {}
         
         # Get all writable registers from the map - these are the ones we need for number entities
@@ -201,7 +223,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         _LOGGER.info("Successfully read %d/%d holding registers", len(holding_data), len(writable_registers))
         return holding_data
 
-    async def _read_coil_registers(self, client: ModbusTcpClient) -> Dict[int, bool]:
+    async def _read_coil_registers(self, client: object) -> Dict[int, bool]:
         coil_data = {}
         
         # Read only a few critical coils to avoid timeouts
@@ -251,11 +273,18 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     async def async_write_register(self, register: int, value: int) -> bool:
         """Write to a holding register."""
-        client = ModbusTcpClient(
-            host=self.host,
-            port=self.port,
-            timeout=5,
-        )
+        if self.connection_type == "tcp":
+            client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
+        else:
+            client = ModbusSerialClient(
+                method=self.method,
+                port=self.serial_port,
+                baudrate=self.baudrate,
+                bytesize=self.bytesize,
+                parity=self.parity,
+                stopbits=self.stopbits,
+                timeout=5,
+            )
         
         try:
             connected = await asyncio.wait_for(
@@ -293,11 +322,18 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
     async def async_write_coil(self, address: int, value: bool) -> bool:
         """Write to a coil register."""
         # Create a fresh client like async_write_register does
-        client = ModbusTcpClient(
-            host=self.host,
-            port=self.port,
-            timeout=5,
-        )
+        if self.connection_type == "tcp":
+            client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
+        else:
+            client = ModbusSerialClient(
+                method=self.method,
+                port=self.serial_port,
+                baudrate=self.baudrate,
+                bytesize=self.bytesize,
+                parity=self.parity,
+                stopbits=self.stopbits,
+                timeout=5,
+            )
         
         try:
             connected = await asyncio.wait_for(
