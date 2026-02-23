@@ -16,10 +16,10 @@ views:
           - entity: sensor.ashp_current_power
             name: Power Usage
             icon: mdi:flash
-          - entity: sensor.ashp_cop
+          - entity: sensor.ashp_coefficient_of_performance
             name: Efficiency (COP)
             icon: mdi:gauge
-          - entity: sensor.ashp_cop
+          - entity: sensor.ashp_coefficient_of_performance
           - entity: sensor.ashp_delta_t
           - entity: climate.ashp_zone_1
             name: Zone 1 Control
@@ -30,27 +30,27 @@ views:
         title: 🌡️ Temperature Sensors
         show_header_toggle: false
         entities:
-          - entity: sensor.outdoor_air_temperature
+          - entity: sensor.ashp_outdoor_air_temperature
             name: Outdoor Air
             icon: mdi:thermometer
-          - entity: sensor.outgoing_water_temperature
+          - entity: sensor.ashp_outgoing_water_temperature
             name: Flow Water
             icon: mdi:thermometer-water
-          - entity: sensor.return_water_temperature
+          - entity: sensor.ashp_return_water_temperature
             name: Return Water
             icon: mdi:thermometer-water
-          - entity: sensor.discharge_temperature
+          - entity: sensor.ashp_discharge_temperature
             name: Compressor Discharge
             icon: mdi:thermometer-high
-          - entity: sensor.suction_temperature
+          - entity: sensor.ashp_suction_temperature
             name: Compressor Suction
             icon: mdi:thermometer-low
-          - entity: sensor.defrost_temperature
+          - entity: sensor.ashp_defrost_temperature
             name: Defrost Sensor
             icon: mdi:snowflake
           - type: conditional
             conditions:
-              - entity: sensor.dhw_tank_temperature
+              - entity: sensor.ashp_dhw_tank_temperature
                 state_not: unavailable
             row:
               entity: sensor.ashp_dhw_tank_temperature
@@ -60,20 +60,20 @@ views:
         title: 🔍 System Status Details
         show_header_toggle: false
         entities:
-          - entity: sensor.dhw_operating_mode_display
+          - entity: sensor.ashp_selected_dhw_operating_mode
             name: Operating Mode
             icon: mdi:cog
           - entity: sensor.ashp_current_power
-          - entity: sensor.compressor_operating_frequency
+          - entity: sensor.ashp_compressor_operating_frequency
             name: Compressor Frequency
             icon: mdi:sine-wave
           - entity: binary_sensor.ashp_defrost_active
             name: Defrost Mode
             icon: mdi:snowflake-melt
-          - entity: sensor.fan_control_number_of_rotation
+          - entity: sensor.ashp_fan_control_number_of_rotation
             name: Fan Speed
             icon: mdi:fan
-          - entity: sensor.water_pump_control_number_of_rotation
+          - entity: sensor.ashp_water_pump_control_number_of_rotation
             name: Pump Speed
             icon: mdi:pump
           - entity: number.ashp_flow_rate
@@ -118,34 +118,34 @@ views:
               - entity: sensor.ashp_dhw_tank_temperature
                 name: Current DHW Temperature
                 icon: mdi:thermometer-water
-              - entity: sensor.dhw_operating_mode_display
+              - entity: sensor.ashp_selected_dhw_operating_mode
                 name: DHW Operating Mode
                 icon: mdi:water-outline
           - type: entities
             title: DHW Control
             entities:
-              - entity: switch.anti_legionella_function_2
+              - entity: switch.ashp_anti_legionella_function
                 name: Anti-Legionella Function
                 icon: mdi:bacteria
-              - entity: sensor.dhw_legionella_cycle_day_display
+              - entity: sensor.ashp_legionella_cycle_day
                 name: Legionella Cycle Day
                 icon: mdi:calendar
-              - entity: sensor.anti_legionella_set_point
+              - entity: sensor.ashp_anti_legionella_set_point
                 name: Legionella Set Point
                 icon: mdi:clock
           - type: entities
             title: DHW Temperature Settings
             entities:
-              - entity: sensor.dhw_comfort_set_temperature
+              - entity: sensor.ashp_dhw_comfort_set_temperature
                 name: Comfort Temperature
                 icon: mdi:thermometer-plus
-              - entity: sensor.dhw_economy_set_temperature
+              - entity: sensor.ashp_dhw_economy_set_temperature
                 name: Economy Temperature
                 icon: mdi:thermometer-minus
-              - entity: sensor.dhw_over_boost_mode_set_point
+              - entity: sensor.ashp_dhw_over_boost_mode_set_point
                 name: Boost Temperature
                 icon: mdi:thermometer-chevron-up
-              - entity: sensor.dhw_setpoint_hysteresis
+              - entity: sensor.ashp_dhw_set_point_hysteresis
                 name: DHW Hysteresis
                 icon: mdi:thermometer-lines
           - type: vertical-stack
@@ -162,7 +162,7 @@ views:
                       action: call-service
                       service: number.set_value
                       target:
-                        entity_id: number.dhw_comfort_temperature
+                        entity_id: number.ashp_dhw_comfort_set_temperature
                       data:
                         value: 55
                     styles:
@@ -177,7 +177,7 @@ views:
                       action: call-service
                       service: number.set_value
                       target:
-                        entity_id: number.dhw_economy_temperature
+                        entity_id: number.ashp_dhw_economy_set_temperature
                       data:
                         value: 45
                     styles:
@@ -220,7 +220,7 @@ views:
               yellow: 1000
               red: 3000
           - type: gauge
-            entity: sensor.ashp_cop
+            entity: sensor.ashp_coefficient_of_performance
             min: 0
             max: 8
             needle: true
@@ -238,7 +238,7 @@ views:
               - entity: sensor.ashp_current_consumption_value
                 name: Total Energy
                 icon: mdi:counter
-              - entity: sensor.daily_energy
+              - entity: sensor.ashp_daily_energy
                 name: Daily Energy
                 icon: mdi:calendar-today
               - entity: sensor.weekly_energy
@@ -261,9 +261,9 @@ views:
                 secondary: >-
                   {% set power = states('sensor.power_consumption')|float(0) %}
                   {% set flow_temp =
-                  states('sensor.outgoing_water_temperature')|float(0) %} {% set
+                  states('sensor.ashp_outgoing_water_temperature')|float(0) %} {% set
                   return_temp =
-                  states('sensor.return_water_temperature')|float(0) %} {% set
+                  states('sensor.ashp_return_water_temperature')|float(0) %} {% set
                   flow_rate =
                   states('input_number.heat_pump_flow_rate')|float(28) %} {% set
                   delta_t = flow_temp - return_temp %} {% if power > 100 and
@@ -295,7 +295,7 @@ views:
                 color: orange
                 stroke_width: 2
                 yaxis_id: power
-              - entity: sensor.ashp_cop
+              - entity: sensor.ashp_coefficient_of_performance
                 name: COP
                 color: green
                 stroke_width: 2
@@ -326,13 +326,13 @@ views:
                   show_states: true
                 graph_span: 12h
                 series:
-                  - entity: sensor.outgoing_water_temperature
+                  - entity: sensor.ashp_outgoing_water_temperature
                     name: Flow
                     color: '#ff7f0e'
-                  - entity: sensor.return_water_temperature
+                  - entity: sensor.ashp_return_water_temperature
                     name: Return
                     color: '#1f77b4'
-                  - entity: sensor.outdoor_air_temperature
+                  - entity: sensor.ashp_outdoor_air_temperature
                     name: Outdoor
                     color: '#2ca02c'
   - title: System Settings
@@ -849,43 +849,43 @@ views:
           - type: entities
             title: Frost Protection
             entities:
-              - entity: switch.frost_protection_on_room_temperature
+              - entity: switch.ashp_frost_protection_based_on_room_temperature
                 name: Room Temperature Protection
                 icon: mdi:snowflake
-              - entity: switch.frost_protection_by_outdoor_temperature
+              - entity: switch.ashp_frost_protection_based_on_outdoor_temperature
                 name: Outdoor Temperature Protection
                 icon: mdi:snowflake-variant
-              - entity: switch.frost_protection_based_on_outgoing_water_temperature
+              - entity: switch.ashp_frost_protection_based_on_flow_temp
                 name: DHW Storage Protection
                 icon: mdi:storage-tank
       - type: entities
         title: PCB Terminal Controls
         entities:
-          - entity: switch.terminal_1_2_3_remote_controller
+          - entity: switch.ashp_terminal_1_2_3_remote_controller
             name: 1-2-3 Remote Controller
             icon: mdi:remote
-          - entity: switch.terminal_7_8_dhw_tank_temperature_probe
+          - entity: switch.ashp_terminal_7_8_dhw_tank_temperature_probe
             name: 7-8 DHW Tank Temperature Probe
             icon: mdi:thermometer-probe
-          - entity: switch.terminal_9_10_outdoor_air_temperature_probe
+          - entity: switch.ashp_terminal_9_10_outdoor_air_temperature_probe
             name: 9-10 Outdoor Air Temperature Probe
             icon: mdi:thermometer-probe
-          - entity: switch.terminal_11_12_buffer_tank_temperature_probe
+          - entity: switch.ashp_terminal_11_12_buffer_tank_temperature_probe
             name: 11-12 Buffer Tank Temperature Probe
             icon: mdi:thermometer-probe
-          - entity: switch.terminal_15_16_32_rs485_mod_bus
+          - entity: switch.ashp_terminal_15_16_32_rs485_mod_bus
             name: 15-16-32 RS485 Modbus
             icon: mdi:cable-data
-          - entity: switch.terminal_19_18_dhw_remote_contact
+          - entity: switch.ashp_terminal_19_18_dhw_remote_contact
             name: 18-19 DHW Remote Contact
             icon: mdi:electric-switch
-          - entity: switch.terminal_22_23_dual_set_point_control
+          - entity: switch.ashp_terminal_22_23_dual_set_point_control
             name: 22-23 Dual Set Point Control
             icon: mdi:tune-variant
-          - entity: switch.terminal_28_29_night_mode
+          - entity: switch.ashp_terminal_28_29_night_mode
             name: 28-29 Night Mode
             icon: mdi:weather-night
-          - entity: switch.terminal_30_31_low_tariff_mode
+          - entity: switch.ashp_terminal_30_31_low_tariff
             name: 30-31 Low Tariff Mode
             icon: mdi:currency-gbp
       - type: entities
@@ -907,10 +907,10 @@ views:
               name: Current DHW Setpoint
               icon: mdi:water-thermometer
           - type: divider
-          - entity: binary_sensor.ashp_weather_compensation_active
+          - entity: binary_sensor.ashp_weather_compensation_active_zone_1
             name: Heating Weather Compensation Zone 1
             icon: mdi:weather-partly-cloudy
-          - entity: binary_sensor.ashp_weather_compensation_active_zone2
+          - entity: binary_sensor.ashp_weather_compensation_active_zone_2
       - type: conditional
         conditions:
           - condition: state
@@ -934,7 +934,7 @@ views:
             - entity: number.ashp_anti_legionella_set_point
               name: Legionella Temperature
               icon: mdi:thermometer-high
-            - entity: switch.anti_legionella_function_2
+            - entity: switch.ashp_anti_legionella_function
               name: Anti-Legionella
               icon: mdi:shield-check
       - type: entities
@@ -942,13 +942,13 @@ views:
         show_header_toggle: false
         state_color: true
         entities:
-          - entity: sensor.dhw_mode
+          - entity: sensor.ashp_selected_operating_mode
             name: System Running
             icon: mdi:power
           - entity: binary_sensor.ashp_alarm_status
             name: Error Status
             icon: mdi:alert-circle
-          - entity: sensor.compressor_operating_frequency
+          - entity: sensor.ashp_compressor_operating_frequency
             name: Compressor Load
             icon: mdi:gauge
           - entity: binary_sensor.ashp_defrost_active
