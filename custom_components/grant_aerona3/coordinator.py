@@ -59,19 +59,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=scan_interval),
         )
-        # Create a persistent client reference (not always used; per-fetch clients created)
-        if self.connection_type == "tcp":
-            self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
-        else:
-            self._client = ModbusSerialClient(
-                method=self.method,
-                port=self.serial_port,
-                baudrate=self.baudrate,
-                bytesize=self.bytesize,
-                parity=self.parity,
-                stopbits=self.stopbits,
-                timeout=10,
-            )
+        # NOTE: A fresh client is created per fetch/write to avoid connection state issues.
+        # self._client removed — it was created here but never used anywhere.
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
@@ -248,22 +237,31 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         return coil_data
 
     def _calculate_derived_values(self, input_data: Dict[int, float], holding_data: Dict[int, float]) -> Dict[str, Any]:
+        """Calculate derived values using correct physics formula.
+
+        COP formula: Q = flow_rate(L/min) * 4.186(kJ/kg°C) * delta_T / 60  [kW]
+        Using 4.186 kJ/kg°C (specific heat of water) — previously used simplified
+        coefficient 1.16 which is only valid for L/h units, not L/min.
+        """
         calculated = {}
         try:
-            flow_temp = input_data.get(9)  # Outgoing Water Temperature (°C)
+            flow_temp = input_data.get(9)   # Outgoing Water Temperature (°C)
             return_temp = input_data.get(0)  # Return Water Temperature (°C)
-            power_w = input_data.get(3, 0) * 100  # Power in W (register 3, scale 100)
-            flow_rate_lph = self.flow_rate_lpm * 60
+            power_raw = input_data.get(3)    # Register 3 raw value (scale *100 = W)
 
             if (
                 flow_temp is not None
                 and return_temp is not None
-                and power_w > 0
-                and flow_rate_lph > 0
+                and power_raw is not None
+                and power_raw > 0
+                and self.flow_rate_lpm > 0
             ):
+                power_w = power_raw * 100
                 delta_t = flow_temp - return_temp
-                heat_output_w = flow_rate_lph * 1.16 * delta_t
-                cop = heat_output_w / power_w if power_w > 0 else 0
+                # Full physics: Q [kW] = flow_rate [L/min] * Cp [kJ/kg·°C] * ΔT [°C] / 60 [s/min]
+                heat_output_kw = (self.flow_rate_lpm * 4.186 * delta_t) / 60
+                heat_output_w = heat_output_kw * 1000
+                cop = heat_output_kw / (power_w / 1000) if power_w > 0 else 0
                 calculated["cop"] = round(cop, 2)
                 calculated["heat_output_w"] = round(heat_output_w, 1)
                 calculated["delta_t"] = round(delta_t, 2)
@@ -357,8 +355,6 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             
             _LOGGER.info("Successfully wrote value %s to coil %d", value, address)
             await self.async_request_refresh()
-            return True
-
             return True
             
         except Exception as err:
