@@ -139,7 +139,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return OptionsFlowHandler()
+        from .options_flow import GrantAerona3OptionsFlowHandler
+        return GrantAerona3OptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -175,39 +176,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "version": INTEGRATION_VERSION,
                 "features": "All entities will have 'ashp_' prefixes for better organisation"
             }
-        )
-
-
-class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle Grant Aerona3 options flow."""
-
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Manage the options."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(
-                            CONF_SCAN_INTERVAL,
-                            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-                        ),
-                    ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
-                    vol.Optional(
-                        "flow_rate_lpm",
-                        default=self.config_entry.options.get(
-                            "flow_rate_lpm",
-                            self.config_entry.data.get("flow_rate_lpm", 34.0)
-                        ),
-                    ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
-                }
-            ),
         )
 
 
