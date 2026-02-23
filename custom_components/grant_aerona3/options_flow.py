@@ -28,7 +28,7 @@ class GrantAerona3OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_SCAN_INTERVAL,
                         self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
                     )
-                ): vol.All(int, vol.Range(min=5, max=300)),
+                ): vol.All(int, vol.Range(min=5, max=3600)),
                 vol.Optional(
                     CONF_FLOW_RATE_LPM,
                     default=self.config_entry.options.get(
