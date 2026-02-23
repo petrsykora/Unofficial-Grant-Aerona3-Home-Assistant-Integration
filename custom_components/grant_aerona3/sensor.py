@@ -15,7 +15,6 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
-    UnitOfTime,
     PERCENTAGE,
 )
 from homeassistant.core import HomeAssistant
@@ -85,7 +84,7 @@ class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": "1.1.1",
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
 
@@ -118,12 +117,9 @@ class GrantAerona3InputSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("input_registers", {}).get(self._register_id)
-        if raw_value is None or raw_value == 65336:
+        if raw_value is None or raw_value == 0xFFFF:  # FIX: 65535 = standard Modbus "not available"
             return None
-
-        is_signed = self._register_config.get("signed", False)
-        if is_signed and raw_value > 32767:
-            raw_value -= 65536
+        # NOTE: signed conversion is handled in coordinator._read_*_registers(); no double-conversion here
 
         scale = self._register_config.get("scale", 1)
         offset = self._register_config.get("offset", 0)
@@ -201,12 +197,9 @@ class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("holding_registers", {}).get(self._register_id)
-        if raw_value is None or raw_value == 65336:
+        if raw_value is None or raw_value == 0xFFFF:  # FIX: 65535 = standard Modbus "not available"
             return None
-
-        is_signed = self._register_config.get("signed", False)
-        if is_signed and raw_value > 32767:
-            raw_value -= 65536
+        # NOTE: signed conversion is handled in coordinator._read_*_registers(); no double-conversion here
 
         scale = self._register_config.get("scale", 1)
         offset = self._register_config.get("offset", 0)
@@ -318,28 +311,24 @@ class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
 
     @property
     def native_value(self) -> Optional[float]:
-        """Return daily energy consumption."""
-        if not self.coordinator.data:
-            return None
-        
-        # Look for energy register or calculate from power
-        input_regs = self.coordinator.data.get("input_registers", {})
-        
-        # Try to get direct energy reading (adjust register as needed)
-        energy = input_regs.get(10)  # Adjust this register number
-        if energy is not None:
-            return round(energy / 1000, 2) if energy > 0 else 0
-        
-        # Note: For actual energy tracking, users should set up utility_meter
-        # This is just a placeholder
-        return 0
+        """Return daily energy consumption.
+
+        FIX: Register 10 = Selected Operating Mode (0/1/2) — NOT energy data.
+        This sensor now returns None until a real energy register is identified.
+        For accurate energy tracking use utility_meter in configuration.yaml:
+
+            utility_meter:
+              ashp_daily_energy:
+                source: sensor.ashp_current_power
+                cycle: daily
+        """
+        return None
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return extra state attributes."""
         return {
-            "calculation_method": "direct_register",
-            "note": "Use utility_meter integration with power sensor for accurate daily tracking"
+            "note": "Energy register not mapped. Use utility_meter with sensor.ashp_current_power.",
         }
 
 class GrantAerona3DeltaTSensor(GrantAerona3BaseSensor):
@@ -513,19 +502,35 @@ class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
 
     @property
     def native_value(self) -> Optional[float]:
-        """Return weather compensation target temperature."""
+        """Return weather compensation calculated flow target.
+
+        FIX: Holding register 50 = "Start Temperature Of Frost Protection On Room Air Temp"
+        — completely unrelated to weather compensation.
+        WC target temperature is not exposed as a single register; it is derived from the
+        heating curve (registers 3-6) and current outdoor temperature (input reg 6).
+        """
         if not self.coordinator.data:
             return None
-        
-        # Get from holding register or calculate
+        input_regs = self.coordinator.data.get("input_registers", {})
         holding_regs = self.coordinator.data.get("holding_registers", {})
-        
-        # Try to get weather compensation setting (adjust register as needed)
-        comp_temp = holding_regs.get(50)  # Adjust register number
-        if comp_temp is not None:
-            return round(comp_temp * 0.1, 1)  # Adjust scale factor
-        
-        return None
+        outdoor_raw = input_regs.get(6)       # Outdoor Air Temperature (°C, scale 1)
+        t_max_raw = holding_regs.get(3)        # Max Flow Temp Zone1 (scale 0.1)
+        t_min_raw = holding_regs.get(4)        # Min Flow Temp Zone1 (scale 0.1)
+        te1_raw = holding_regs.get(5)          # Min Outdoor Temp (scale 0.1)
+        te2_raw = holding_regs.get(6)          # Max Outdoor Temp (scale 0.1)
+        if None in (outdoor_raw, t_max_raw, t_min_raw, te1_raw, te2_raw):
+            return None
+        outdoor = float(outdoor_raw)
+        t_max = t_max_raw * 0.1
+        t_min = t_min_raw * 0.1
+        te1 = te1_raw * 0.1
+        te2 = te2_raw * 0.1
+        if te2 == te1:
+            return None
+        # Linear interpolation along the heating curve
+        ratio = (outdoor - te1) / (te2 - te1)
+        target = t_max - ratio * (t_max - t_min)
+        return round(max(t_min, min(t_max, target)), 1)
 
 class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 daily cost sensor with ashp_ prefix."""
