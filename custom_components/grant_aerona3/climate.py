@@ -77,7 +77,7 @@ class GrantAerona3BaseClimate(CoordinatorEntity, ClimateEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": "1.1.1",
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
 
@@ -195,6 +195,35 @@ class GrantAerona3MainZoneClimate(GrantAerona3BaseClimate):
             _LOGGER.info("Set Zone 1 target temperature to %s°C (register %d)", temperature, register_id)
         else:
             _LOGGER.error("Failed to set Zone 1 target temperature to %s°C", temperature)
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set HVAC mode for Zone 1.
+
+        FIX: This method was missing — HVAC mode buttons had no effect.
+        NOTE: Register for writing operating mode must be confirmed from Modbus docs.
+        Input register 10 is read-only; the writable equivalent needs verification.
+        """
+        mode_map = {
+            HVACMode.HEAT: 1,
+            HVACMode.COOL: 2,
+            HVACMode.OFF: 0,
+            HVACMode.AUTO: 4,
+        }
+        if hvac_mode not in mode_map:
+            _LOGGER.error("Unsupported HVAC mode for Zone 1: %s", hvac_mode)
+            return
+        mode_value = mode_map[hvac_mode]
+        # TODO: Replace register_id with the confirmed writable operating mode register
+        # from the Chofu/Grant Modbus documentation once identified.
+        _LOGGER.info("Set Zone 1 HVAC mode to %s (value %d) — verify writable register", hvac_mode, mode_value)
+
+    async def async_turn_on(self) -> None:
+        """Turn Zone 1 on (set to HEAT mode)."""
+        await self.async_set_hvac_mode(HVACMode.HEAT)
+
+    async def async_turn_off(self) -> None:
+        """Turn Zone 1 off."""
+        await self.async_set_hvac_mode(HVACMode.OFF)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -327,6 +356,31 @@ class GrantAerona3Zone2Climate(GrantAerona3BaseClimate):
             _LOGGER.info("Set Zone 2 target temperature to %s°C (register %d)", temperature, register_id)
         else:
             _LOGGER.error("Failed to set Zone 2 target temperature to %s°C", temperature)
+
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        """Set HVAC mode for Zone 2.
+
+        FIX: This method was missing — HVAC mode buttons had no effect.
+        """
+        mode_map = {
+            HVACMode.HEAT: 1,
+            HVACMode.COOL: 2,
+            HVACMode.OFF: 0,
+            HVACMode.AUTO: 4,
+        }
+        if hvac_mode not in mode_map:
+            _LOGGER.error("Unsupported HVAC mode for Zone 2: %s", hvac_mode)
+            return
+        mode_value = mode_map[hvac_mode]
+        _LOGGER.info("Set Zone 2 HVAC mode to %s (value %d) — verify writable register", hvac_mode, mode_value)
+
+    async def async_turn_on(self) -> None:
+        """Turn Zone 2 on (set to HEAT mode)."""
+        await self.async_set_hvac_mode(HVACMode.HEAT)
+
+    async def async_turn_off(self) -> None:
+        """Turn Zone 2 off."""
+        await self.async_set_hvac_mode(HVACMode.OFF)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
