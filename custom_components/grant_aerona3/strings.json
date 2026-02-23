@@ -7,13 +7,13 @@
         "data": {
           "host": "IP Address",
           "port": "Port (usually 502)",
-          "slave_id": "Slave ID (usually 1)",
+          "unit_id": "Unit ID (usually 1)",
           "scan_interval": "Scan Interval (seconds)"
         },
         "data_description": {
           "host": "The IP address of your Grant Aerona3 heat pump",
           "port": "Modbus TCP port (default: 502)",
-          "slave_id": "Modbus slave ID (default: 1)",
+          "unit_id": "Modbus unit ID (default: 1)",
           "scan_interval": "How often to read data from the heat pump (recommended: 30 seconds)"
         }
       }
